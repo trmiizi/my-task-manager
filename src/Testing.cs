@@ -421,6 +421,14 @@ namespace MyTaskManager
             yn.Win.Close();
             Theme.Apply(false);
 
+            // What's new page, light and dark
+            mv.SetView("whatsnew");
+            Pump(); w.UpdateLayout();
+            Save(w, Path.Combine(dir, "whatsnew.png"));
+            Theme.Apply(true); Pump(); w.UpdateLayout();
+            Save(w, Path.Combine(dir, "whatsnew-dark.png"));
+            Theme.Apply(false);
+
             // archive: Today with an "Archive ticked" button, then History > Archived
             mv.SetView("settings");
             mv.SetUpdateStatus("Version 2.2.0 is available.\nWhat's new: Bigger text option and a weekly summary.", false, "Update to 2.2.0");

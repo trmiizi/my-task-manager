@@ -81,6 +81,8 @@ namespace MyTaskManager
         /* if a reminder is left unanswered, show it again after this many minutes; 0 = don't */
         public int NagMinutes { get; set; }
         public string Theme { get; set; }   // light | dark | system
+        /* newest version whose "What's new" page has been opened; the sidebar shows "New" until then */
+        public string SeenVersion { get; set; }
         public string NoteColorDay { get; set; }   // note colour to go back to when leaving dark mode
         public AppSettings() { StartWithWindows = true; Sound = true; NoteVisible = true; NoteColor = "yellow"; NoteRange = "2days"; NagMinutes = 10; Theme = "light"; }
     }

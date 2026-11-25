@@ -67,6 +67,7 @@ namespace MyTaskManager
             StartupCheck = F<CheckBox>("StartupCheck"); SoundCheck = F<CheckBox>("SoundCheck"); MainScroll = F<ScrollViewer>("MainScroll");
             F<Border>("AddDateHost").Child = addDate.Root;
 
+            F<Image>("Logo").Source = AppIcon.Frame(64);
             BuildNav();
             Wire();
             SetView("today");
@@ -80,11 +81,12 @@ namespace MyTaskManager
                 new[] { "tomorrow", "", "Tomorrow" },
                 new[] { "upcoming", "", "Upcoming" },
                 new[] { "completed", "", "History" },
+                new[] { "whatsnew", "", "What's new" },
                 new[] { "settings", "", "Settings & backup" },
             };
             foreach (string[] it in items)
             {
-                if (it[0] == "settings") NavPanel.Children.Add(Theme.Ref(new Border { Height = 1, Margin = new Thickness(6, 10, 6, 10) }, Border.BackgroundProperty, "Line"));
+                if (it[0] == "whatsnew") NavPanel.Children.Add(Theme.Ref(new Border { Height = 1, Margin = new Thickness(6, 10, 6, 10) }, Border.BackgroundProperty, "Line"));
                 Grid g = new Grid();
                 g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
                 g.ColumnDefinitions.Add(new ColumnDefinition());
@@ -116,6 +118,11 @@ namespace MyTaskManager
             DateTime next = DateTime.Now.AddHours(1);
             Ui.SetTime(AddTime, def == U.Today && next.Date == DateTime.Today ? U.HHmm(new TimeSpan(next.Hour, 0, 0)) : "09:00");
             AddError.Visibility = Visibility.Collapsed;
+            if (v == "whatsnew" && svc.Settings.SeenVersion != Updater.CurrentText)
+            {
+                svc.Settings.SeenVersion = Updater.CurrentText;
+                svc.Save();
+            }
             Render();
             MainScroll.ScrollToTop();
         }
@@ -200,7 +207,7 @@ namespace MyTaskManager
 
         public void FocusAdd()
         {
-            if (View == "completed" || View == "settings") SetView("today");
+            if (View == "completed" || View == "settings" || View == "whatsnew") SetView("today");
             AddTitle.Focus();
         }
 
@@ -286,6 +293,7 @@ namespace MyTaskManager
             SetCount("upcoming", pending.Count(t => string.CompareOrdinal(t.Date, tm) > 0), false);
             SetCount("completed", 0, false);
             SetCount("settings", 0, false);
+            SetNewBadge(svc.Settings.SeenVersion != Updater.CurrentText);
             foreach (KeyValuePair<string, Button> kv in navButtons) kv.Value.Tag = kv.Key == View ? "on" : null;
             Greeting.Text = DateTime.Today.ToString("dddd, d MMMM", U.En);
             UpdateChips();
@@ -333,6 +341,10 @@ namespace MyTaskManager
                     HeaderTitle.Text = "Settings & backup";
                     HeaderSub.Text = "Reminders, start-up and your data";
                     break;
+                case "whatsnew":
+                    HeaderTitle.Text = "What's new";
+                    HeaderSub.Text = "You have version " + Updater.CurrentText + " · what changed in each update";
+                    break;
             }
             NoteCheck.IsChecked = svc.Settings.NoteVisible;
             NoteTopCheck.IsChecked = svc.Settings.NoteTopmost;
@@ -353,6 +365,41 @@ namespace MyTaskManager
             c.Foreground = alert ? Theme.B("Danger") : active ? Theme.B("Accent") : Theme.B("Text2");
         }
 
+        /* "New" pill on the What's new item until that page has been opened in this version */
+        void SetNewBadge(bool on)
+        {
+            TextBlock c = navCounts["whatsnew"];
+            Border badge = (Border)c.Parent;
+            badge.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
+            c.Text = "New";
+            badge.Background = Theme.B("Accent");
+            c.Foreground = Brushes.White;
+        }
+
+        void RenderWhatsNew()
+        {
+            string current = Updater.CurrentText;
+            foreach (Changelog.Entry e in Changelog.All)
+            {
+                DateTime d;
+                string when = DateTime.TryParseExact(e.Date, "yyyy-MM-dd", U.En, System.Globalization.DateTimeStyles.None, out d) ? d.ToString("d MMMM yyyy", U.En) : e.Date;
+                Section("Version " + e.Version + " · " + when + (e.Version == current ? " · your version" : ""), false);
+                StackPanel sp = new StackPanel { Margin = new Thickness(18, 14, 18, 12) };
+                foreach (string item in e.Items)
+                {
+                    Grid row = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+                    row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) });
+                    row.ColumnDefinitions.Add(new ColumnDefinition());
+                    row.Children.Add(Theme.Ref(new TextBlock { Text = "", FontFamily = Theme.IconFont, FontSize = 12, Margin = new Thickness(0, 3, 0, 0) }, TextBlock.ForegroundProperty, "Accent"));
+                    TextBlock t = Theme.Ref(new TextBlock { Text = item, FontSize = 13.5, TextWrapping = TextWrapping.Wrap }, TextBlock.ForegroundProperty, "Text");
+                    Grid.SetColumn(t, 1);
+                    row.Children.Add(t);
+                    sp.Children.Add(row);
+                }
+                ListHost.Children.Add(new Border { Style = Theme.S("Card"), Child = sp });
+            }
+        }
+
         void RenderStatus()
         {
             bool err = svc.LastError != null;
@@ -367,7 +414,8 @@ namespace MyTaskManager
             string td = U.Today, tm = U.Tomorrow;
             Comparison<TaskItem> byDue = (a, b) => a.Due.CompareTo(b.Due);
 
-            if (View == "today")
+            if (View == "whatsnew") RenderWhatsNew();
+            else if (View == "today")
             {
                 List<TaskItem> overdue = svc.Tasks.Where(t => !t.Closed && string.CompareOrdinal(t.Date, td) < 0).ToList();
                 overdue.Sort(byDue);
@@ -645,9 +693,7 @@ namespace MyTaskManager
     <Border Background='{DynamicResource Surface}' BorderBrush='{DynamicResource Line}' BorderThickness='0,0,1,0'>
       <DockPanel Margin='14,20,14,16'>
         <StackPanel DockPanel.Dock='Top' Orientation='Horizontal' Margin='8,0,0,22'>
-          <Border Width='34' Height='34' CornerRadius='9' Background='{DynamicResource Accent}'>
-            <TextBlock Text='&#xE73E;' FontFamily='{StaticResource IconFont}' FontSize='16' Foreground='{DynamicResource OnAccent}' HorizontalAlignment='Center' VerticalAlignment='Center'/>
-          </Border>
+          <Image x:Name='Logo' Width='36' Height='36' RenderOptions.BitmapScalingMode='HighQuality'/>
           <StackPanel Margin='10,0,0,0' VerticalAlignment='Center'>
             <TextBlock Text='My Task Manager' FontWeight='Bold' FontSize='14.5'/>
             <TextBlock x:Name='BrandDate' FontSize='12' Foreground='{DynamicResource Text3}'/>

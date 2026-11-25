@@ -141,7 +141,7 @@ namespace MyTaskManager
             // updates only happen when the user asks: Settings > Check for updates > Update now
             if (justUpdated)
                 Dispatcher.BeginInvoke(new Action(() => Dialog.Info(main.Win.IsVisible ? main.Win : null, "Updated to version " + Updater.CurrentText,
-                    "My Task Manager is up to date. Your tasks and settings are just as you left them.", Dialog.Kind.Ok)), DispatcherPriority.ApplicationIdle);
+                    "My Task Manager is up to date. Your tasks and settings are just as you left them.\n\nSee what changed under What's new in the sidebar.", Dialog.Kind.Ok)), DispatcherPriority.ApplicationIdle);
         }
 
         /* ---------------------------------------------------------------- updates */
@@ -347,6 +347,24 @@ namespace MyTaskManager
         public static ImageSource Image()
         {
             try { using (Stream s = Res()) return BitmapFrame.Create(s, BitmapCreateOptions.None, BitmapCacheOption.OnLoad); }
+            catch (Exception ex) { Log.Write(ex); return null; }
+        }
+
+        /* the smallest frame of the icon that is at least px wide (for showing the logo inside the app) */
+        public static ImageSource Frame(int px)
+        {
+            try
+            {
+                using (Stream s = Res())
+                {
+                    BitmapDecoder d = BitmapDecoder.Create(s, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+                    BitmapFrame best = null;
+                    foreach (BitmapFrame f in d.Frames)
+                        if (best == null || (f.PixelWidth >= px && (best.PixelWidth < px || f.PixelWidth < best.PixelWidth)) || (best.PixelWidth < px && f.PixelWidth > best.PixelWidth))
+                            best = f;
+                    return best;
+                }
+            }
             catch (Exception ex) { Log.Write(ex); return null; }
         }
     }
