@@ -183,7 +183,7 @@ namespace MyTaskManager
                 svc.Save();
             };
             F<Button>("ThemeLight").Click += delegate { PickTheme("light"); };
-            F<TextBlock>("VersionText").Text = "You have version " + Updater.CurrentText + ". Your tasks and settings are kept when you update.";
+            F<TextBlock>("VersionText").Text = "Version " + Updater.CurrentText + ". Your tasks stay when you update.";
             F<Button>("UpdateBtn").Click += delegate { if (CheckUpdates != null) CheckUpdates(); };
             F<Button>("InstallBtn").Click += delegate { if (InstallUpdate != null) InstallUpdate(); };
             F<Button>("ThemeDark").Click += delegate { PickTheme("dark"); };
@@ -810,7 +810,7 @@ namespace MyTaskManager
               </Border>
               <StackPanel VerticalAlignment='Center' Margin='0,0,16,0'>
                 <TextBlock Text='Appearance' FontSize='16' FontWeight='SemiBold' Margin='0,0,0,4'/>
-                <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Text='The sticky note switches to its Night colour too.'/>
+                <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Text='For the app and the sticky note.'/>
               </StackPanel>
             </DockPanel>
           </Border>
@@ -831,13 +831,12 @@ namespace MyTaskManager
             <StackPanel>
               <TextBlock Text='Reminders' FontSize='16' FontWeight='SemiBold' Margin='0,0,0,4'/>
               <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Margin='0,0,0,14'>
-                My Task Manager keeps running in the system tray (near the clock) when you close this window, and pops up a reminder card
-                in the bottom-right corner when a task is due. If the PC was off at reminder time, you get the reminder as soon as it is back on.
+                Pop up bottom-right when a task is due, even with this window closed.
               </TextBlock>
-              <CheckBox x:Name='StartupCheck' Style='{StaticResource Check}' Content='Start My Task Manager automatically when Windows starts (recommended)' Margin='0,0,0,10'/>
-              <CheckBox x:Name='SoundCheck' Style='{StaticResource Check}' Content='Play a sound with reminders' Margin='0,0,0,14'/>
+              <CheckBox x:Name='StartupCheck' Style='{StaticResource Check}' Content='Start with Windows (recommended)' Margin='0,0,0,10'/>
+              <CheckBox x:Name='SoundCheck' Style='{StaticResource Check}' Content='Play a sound' Margin='0,0,0,14'/>
               <StackPanel Orientation='Horizontal' Margin='0,0,0,16'>
-                <TextBlock Text='If I ignore a reminder, show it again:' VerticalAlignment='Center' Margin='0,0,10,0'/>
+                <TextBlock Text='Ignored reminder? Show it again:' VerticalAlignment='Center' Margin='0,0,10,0'/>
                 <ComboBox x:Name='NagCombo' Width='190'/>
               </StackPanel>
               <Button x:Name='TestBtn' Style='{StaticResource Btn}' HorizontalAlignment='Left' Content='Show a test reminder'/>
@@ -847,22 +846,19 @@ namespace MyTaskManager
             <StackPanel>
               <TextBlock Text='Sticky note' FontSize='16' FontWeight='SemiBold' Margin='0,0,0,4'/>
               <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Margin='0,0,0,14'>
-                A small note on the desktop with today's and tomorrow's tasks. Click a box once for Done, twice for Not done.
-                Type at the bottom of the note to add a task, e.g. Call Ali tomorrow 3pm. Drag the top bar to move it, the corner to resize it.
-                The ⋯ button on the note has more: show the whole week, lock it in place, change its colour or put a photo from your PC behind it.
+                Your tasks on the desktop. Colour and photo are in the note's ⋯ menu.
               </TextBlock>
-              <CheckBox x:Name='NoteCheck' Style='{StaticResource Check}' Content='Show the sticky note on the desktop' Margin='0,0,0,10'/>
-              <CheckBox x:Name='NoteTopCheck' Style='{StaticResource Check}' Content='Keep the sticky note on top of other windows' Margin='0,0,0,10'/>
-              <CheckBox x:Name='NoteLockCheck' Style='{StaticResource Check}' Content='Lock the sticky note so it can&#x27;t be moved or resized by accident' Margin='0,0,0,10'/>
-              <CheckBox x:Name='NoteWeekCheck' Style='{StaticResource Check}' Content='Show the whole week on the note (not just today and tomorrow)'/>
+              <CheckBox x:Name='NoteCheck' Style='{StaticResource Check}' Content='Show on the desktop' Margin='0,0,0,10'/>
+              <CheckBox x:Name='NoteTopCheck' Style='{StaticResource Check}' Content='Keep on top of other windows' Margin='0,0,0,10'/>
+              <CheckBox x:Name='NoteLockCheck' Style='{StaticResource Check}' Content='Lock position and size' Margin='0,0,0,10'/>
+              <CheckBox x:Name='NoteWeekCheck' Style='{StaticResource Check}' Content='Show the whole week'/>
             </StackPanel>
           </Border>
           <Border Style='{StaticResource Card}' Padding='20'>
             <StackPanel>
               <TextBlock Text='Your data' FontSize='16' FontWeight='SemiBold' Margin='0,0,0,4'/>
               <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Margin='0,0,0,4'>
-                Tasks are saved on this PC automatically, and a daily backup is kept for 14 days. Export a backup to move your tasks to another PC.
-                Import also accepts backups from the earlier HTML version.
+                Saved on this PC, with daily backups for 14 days. Export to move your tasks to another PC.
               </TextBlock>
               <TextBlock x:Name='DataPath' FontFamily='Consolas' FontSize='12' Foreground='{DynamicResource Text3}' Margin='0,0,0,14' TextWrapping='Wrap'/>
               <WrapPanel>
@@ -876,14 +872,13 @@ namespace MyTaskManager
             <StackPanel>
               <TextBlock Text='Remove from this PC' FontSize='16' FontWeight='SemiBold' Margin='0,0,0,4'/>
               <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Margin='0,0,0,14'>
-                Stops My Task Manager starting with Windows, closes it, and (if you choose) deletes your tasks and backups.
-                After that you can delete MyTaskManager.exe. Nothing else is left behind.
+                Turns off start-up and closes the app. You choose whether to delete your tasks.
               </TextBlock>
               <Button x:Name='UninstallBtn' Style='{StaticResource Btn}' HorizontalAlignment='Left' Content='Remove My Task Manager from this PC…' Foreground='{DynamicResource Danger}'/>
             </StackPanel>
           </Border>
           <TextBlock Foreground='{DynamicResource Text3}' FontSize='12' Margin='4,14,0,0' TextWrapping='Wrap'>
-            Right-click any task for Done / Not done / Edit / Add checklist. Shortcuts: Ctrl+N new task · Ctrl+F search history. To quit completely, right-click the tray icon and choose Exit.
+            Right-click a task for more options · Ctrl+N new task · Ctrl+F search · To quit: right-click the tray icon > Exit
           </TextBlock>
         </StackPanel>
       </StackPanel>
