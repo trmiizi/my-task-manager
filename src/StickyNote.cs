@@ -7,6 +7,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using IO = System.IO;
@@ -30,8 +31,16 @@ namespace MyTaskManager
         readonly Border Paper, Header, Wash;
         readonly Button PinBtn, ColorBtn;
         ImageSource photo;
-        // quick-add options (date / time / reminder / repeat), shown while typing
-        StackPanel addOpts;
+        // add panel: a "+ Add a task" line opens a panel that slides up over the bottom of the note
+        readonly Border AddPanel;
+        readonly Button AddLine;
+        readonly TranslateTransform PanelShift;
+        TextBlock panelError;
+        Button dayOther, timeCustom, timeOther;
+        Button[] dayPills, timePills;
+        readonly List<TextBlock> panelLabels = new List<TextBlock>();
+        bool showTimeBox;
+        Brush PaperColor = Hex("#FFF7CF");
         DateField addDate;
         ComboBox addTime, addRemind, addRepeat;
         bool syncing, dateTouched, timeTouched;
@@ -75,6 +84,9 @@ namespace MyTaskManager
             Wash = (Border)Win.FindName("Wash");
             PinBtn = (Button)Win.FindName("PinBtn");
             ColorBtn = (Button)Win.FindName("ColorBtn");
+            AddPanel = (Border)Win.FindName("AddPanel");
+            AddLine = (Button)Win.FindName("AddLine");
+            PanelShift = (TranslateTransform)AddPanel.RenderTransform;
 
             AppSettings s = svc.Settings;
             if (s.NoteWidth >= 220 && s.NoteHeight >= 180) { Win.Width = s.NoteWidth; Win.Height = s.NoteHeight; }
@@ -87,7 +99,7 @@ namespace MyTaskManager
             Win.Top = onScreen ? s.NoteTop : wa.Top + 8;
             Win.Topmost = s.NoteTopmost;
             ApplyLook();
-            BuildAddOptions();
+            BuildAddPanel();
             Wire();
             Render();
         }
@@ -124,7 +136,8 @@ namespace MyTaskManager
             };
             hintTimer.Tick += delegate { hintTimer.Stop(); QuickHint.Visibility = Visibility.Collapsed; };
 
-            ((Button)Win.FindName("AddBtn")).Click += delegate { QuickAdd.Focus(); };
+            ((Button)Win.FindName("AddBtn")).Click += delegate { OpenAddPanel(""); };
+            AddLine.Click += delegate { OpenAddPanel(""); };
             ((Button)Win.FindName("OpenBtn")).Click += delegate { if (OpenMain != null) OpenMain(); };
             ((Button)Win.FindName("HideBtn")).Click += delegate { SetVisible(false); if (NoteHidden != null) NoteHidden(); };
             PinBtn.Click += delegate { SetTopmost(!svc.Settings.NoteTopmost); };
@@ -189,14 +202,17 @@ namespace MyTaskManager
             };
 
             QuickAdd.TextChanged += delegate { SyncAddOptions(); };
-            ((StackPanel)Win.FindName("AddArea")).PreviewKeyDown += (o, e) =>
+            AddPanel.PreviewKeyDown += (o, e) =>
             {
                 if (e.Key != Key.Enter && e.Key != Key.Escape) return;
                 if (addTime.IsDropDownOpen || addRemind.IsDropDownOpen || addRepeat.IsDropDownOpen) return;
+                if (e.Key == Key.Enter && e.OriginalSource is ButtonBase) return;   // Enter on a focused button clicks it
                 e.Handled = true;
-                if (e.Key == Key.Escape) ResetQuickAdd();
+                if (e.Key == Key.Escape) CloseAddPanel();
                 else CommitQuickAdd();
             };
+            Paper.SizeChanged += delegate { FitPanel(); };
+            Header.SizeChanged += delegate { FitPanel(); };
             svc.Changed += Render;
         }
 
@@ -245,64 +261,168 @@ namespace MyTaskManager
             return IntPtr.Zero;
         }
 
-        void BuildAddOptions()
+        void BuildAddPanel()
         {
+            StackPanel body = (StackPanel)Win.FindName("PanelBody");
             addDate = new DateField();
             addTime = Ui.TimeCombo(null);
             addRemind = Ui.RemindCombo(null);
             addRepeat = Ui.RepeatCombo(null);
-            addDate.Root.ToolTip = "Day";
             addTime.ToolTip = "Time (pick one or type, e.g. 2:45 PM)";
             addRemind.ToolTip = "When to remind you";
             addRepeat.ToolTip = "Repeat";
-            addDate.Changed += delegate { if (!syncing) dateTouched = true; };
-            addTime.SelectionChanged += delegate { if (!syncing) timeTouched = true; };
+            addDate.Changed += delegate { if (!syncing) dateTouched = true; RefreshPills(); };
+            addTime.SelectionChanged += delegate { if (!syncing) timeTouched = true; Win.Dispatcher.BeginInvoke(new Action(RefreshPills)); };
             addTime.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
-                new TextChangedEventHandler((o, e) => { if (!syncing) timeTouched = true; }));
+                new TextChangedEventHandler((o, e) => { if (!syncing) timeTouched = true; RefreshPills(); }));
 
-            Grid g = new Grid { Margin = new Thickness(0, 6, 0, 0) };
+            body.Children.Add(PanelLabel("DAY"));
+            WrapPanel days = new WrapPanel();
+            Button today = Pill("Today"), tomorrow = Pill("Tomorrow");
+            today.Click += delegate { addDate.Value = U.Today; };
+            tomorrow.Click += delegate { addDate.Value = U.Tomorrow; };
+            dayOther = Pill("Other day…");
+            dayOther.ToolTip = "Pick a date";
+            dayOther.Click += delegate { addDate.OpenAt(dayOther); };
+            dayPills = new[] { today, tomorrow };
+            days.Children.Add(today); days.Children.Add(tomorrow); days.Children.Add(dayOther);
+            body.Children.Add(days);
+
+            body.Children.Add(PanelLabel("TIME"));
+            WrapPanel times = new WrapPanel();
+            string[] names = { "9am", "12pm", "3pm", "6pm" };
+            timePills = new Button[names.Length];
+            for (int i = 0; i < names.Length; i++)
+            {
+                string hhmm = TimePresets[i];
+                Button b = Pill(names[i]);
+                b.ToolTip = U.FmtTime(hhmm);
+                b.Click += delegate { showTimeBox = false; Ui.SetTime(addTime, hhmm); timeTouched = true; RefreshPills(); };
+                timePills[i] = b;
+                times.Children.Add(b);
+            }
+            timeCustom = Pill("");   // a time that isn't one of the buttons, e.g. 5:00 PM
+            timeCustom.ToolTip = "Change the time";
+            timeCustom.Click += delegate { ShowTimeBox(); };
+            timeOther = Pill("Other…");
+            timeOther.ToolTip = "Type any time, e.g. 2:45 PM";
+            timeOther.Click += delegate { ShowTimeBox(); };
+            times.Children.Add(timeCustom); times.Children.Add(timeOther);
+            body.Children.Add(times);
+            addTime.Margin = new Thickness(0, 1, 0, 0);
+            body.Children.Add(addTime);
+
+            Grid g = new Grid { Margin = new Thickness(0, 9, 0, 0) };
             g.ColumnDefinitions.Add(new ColumnDefinition());
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(6) });
             g.ColumnDefinitions.Add(new ColumnDefinition());
-            g.RowDefinitions.Add(new RowDefinition());
-            g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(6) });
-            g.RowDefinitions.Add(new RowDefinition());
-            Place(g, addDate.Root, 0, 0); Place(g, addTime, 0, 2);
-            Place(g, addRemind, 2, 0); Place(g, addRepeat, 2, 2);
+            Place(g, addRemind, 0, 0); Place(g, addRepeat, 0, 2);
+            body.Children.Add(g);
 
-            DockPanel foot = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
-            Button go = new Button { Style = Theme.S("Primary"), Content = "Add", Padding = new Thickness(16, 5, 16, 5) };
+            panelError = new TextBlock { FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(1, 8, 0, 0), Visibility = Visibility.Collapsed };
+            body.Children.Add(panelError);
+
+            StackPanel acts = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 11, 0, 0) };
+            Button cancel = new Button { Style = Theme.S("Btn"), Content = "Cancel", Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 6, 0) };
+            Button go = new Button { Style = Theme.S("Ink"), Content = "Add task", Padding = new Thickness(14, 5, 14, 5) };
+            cancel.Click += delegate { CloseAddPanel(); };
             go.Click += delegate { CommitQuickAdd(); };
-            DockPanel.SetDock(go, Dock.Right);
-            foot.Children.Add(go);
-            foot.Children.Add(new TextBlock { Text = "Enter to add · Esc to cancel", FontSize = 11.5, Foreground = Muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(2, 0, 0, 0) });
-
-            addOpts = new StackPanel { Visibility = Visibility.Collapsed };
-            addOpts.Children.Add(g);
-            addOpts.Children.Add(foot);
-            StackPanel area = (StackPanel)Win.FindName("AddArea");
-            area.Children.Insert(area.Children.IndexOf(QuickAdd) + 1, addOpts);
+            acts.Children.Add(cancel); acts.Children.Add(go);
+            body.Children.Add(acts);
+            ResetQuickAdd();
         }
 
         static void Place(Grid g, UIElement e, int row, int col) { Grid.SetRow(e, row); Grid.SetColumn(e, col); g.Children.Add(e); }
 
+        TextBlock PanelLabel(string text)
+        {
+            TextBlock t = new TextBlock { Text = text, FontSize = 11, FontWeight = FontWeights.Bold, Margin = new Thickness(1, 9, 0, 4), Foreground = Muted };
+            panelLabels.Add(t);
+            return t;
+        }
+
+        static Button Pill(string text)
+        {
+            return new Button { Style = Theme.S("Btn"), Content = text, Padding = new Thickness(9, 3, 9, 3), FontSize = 12, Margin = new Thickness(0, 0, 5, 5) };
+        }
+
+        /* Selected = ink fill with paper-coloured text; otherwise an outline */
+        void SetPill(Button b, bool on)
+        {
+            b.Background = on ? Ink : Brushes.Transparent;
+            b.BorderBrush = on ? Ink : (Night ? Hex("#40FFFFFF") : Hex("#38000000"));
+            b.Foreground = on ? PaperColor : Ink;
+            b.FontWeight = on ? FontWeights.SemiBold : FontWeights.Normal;
+        }
+
+        /* Show which day/time buttons match the current pick */
+        void RefreshPills()
+        {
+            if (dayPills == null) return;
+            string kind = DayKind(addDate.Value);
+            SetPill(dayPills[0], kind == "today");
+            SetPill(dayPills[1], kind == "tomorrow");
+            dayOther.Content = kind == "other" ? U.FmtDate(addDate.Value) : "Other day…";
+            SetPill(dayOther, kind == "other");
+
+            string hhmm;
+            bool ok = Ui.ReadTime(addTime, out hhmm);
+            int idx = ok ? PresetIndex(hhmm) : -1;
+            for (int i = 0; i < timePills.Length; i++) SetPill(timePills[i], idx == i);
+            timeCustom.Content = ok ? U.FmtTime(hhmm) : "";
+            timeCustom.Visibility = ok && idx < 0 && !showTimeBox ? Visibility.Visible : Visibility.Collapsed;
+            SetPill(timeCustom, true);
+            SetPill(timeOther, showTimeBox);
+            addTime.Visibility = showTimeBox ? Visibility.Visible : Visibility.Collapsed;
+            foreach (TextBlock t in panelLabels) t.Foreground = Muted;
+            panelError.Foreground = Late;
+        }
+
+        void ShowTimeBox()
+        {
+            showTimeBox = true;
+            RefreshPills();
+            addTime.Focus();
+        }
+
+        /* The panel may cover the list but never the note's top bar; a short note scrolls the panel */
+        void FitPanel() { AddPanel.MaxHeight = Math.Max(120, Paper.ActualHeight - Header.ActualHeight - 2); }
+
+        /* Opens the add panel (from the + line or the + in the top bar), optionally with some text typed in */
+        public void OpenAddPanel(string text)
+        {
+            if (AddPanel.Visibility != Visibility.Visible)
+            {
+                ResetQuickAdd();
+                AddPanel.Visibility = Visibility.Visible;
+                AddLine.Visibility = Visibility.Hidden;   // keeps the footer height so the list doesn't jump
+                QuickHint.Visibility = Visibility.Collapsed;
+                FitPanel();
+                PanelShift.BeginAnimation(TranslateTransform.YProperty,
+                    new DoubleAnimation(28, 0, TimeSpan.FromMilliseconds(160)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+            }
+            if (!string.IsNullOrEmpty(text)) QuickAdd.Text = text;
+            Win.Dispatcher.BeginInvoke(new Action(() => { QuickAdd.Focus(); QuickAdd.CaretIndex = QuickAdd.Text.Length; }), DispatcherPriority.Input);
+        }
+
+        void CloseAddPanel()
+        {
+            ResetQuickAdd();
+            AddPanel.Visibility = Visibility.Collapsed;
+            AddLine.Visibility = Visibility.Visible;
+        }
+
         /* While typing, follow words like "tomorrow 3pm" unless the user already picked a day/time by hand */
         void SyncAddOptions()
         {
-            if (syncing) return;
-            if (QuickAdd.Text.Trim().Length == 0)
-            {
-                addOpts.Visibility = Visibility.Collapsed;
-                dateTouched = timeTouched = false;
-                return;
-            }
-            addOpts.Visibility = Visibility.Visible;
+            if (syncing || addDate == null) return;
             string title, date, time;
             U.QuickParse(QuickAdd.Text, out title, out date, out time);
             syncing = true;
             if (!dateTouched) addDate.Value = date;
             if (!timeTouched) Ui.SetTime(addTime, time);
             syncing = false;
+            RefreshPills();
         }
 
         void ResetQuickAdd()
@@ -312,28 +432,31 @@ namespace MyTaskManager
             Ui.SetRemind(addRemind, 15);
             Ui.SetRepeat(addRepeat, "none");
             syncing = false;
-            addOpts.Visibility = Visibility.Collapsed;
-            dateTouched = timeTouched = false;
+            dateTouched = timeTouched = showTimeBox = false;
+            panelError.Visibility = Visibility.Collapsed;
+            SyncAddOptions();   // default day and time: next hour today, or tomorrow 9am
         }
 
         void CommitQuickAdd()
         {
             if (QuickAdd.Text.Trim().Length == 0) { QuickAdd.Focus(); return; }
             string hhmm;
-            if (!Ui.ReadTime(addTime, out hhmm)) { Hint("Time not recognised. Try 2:30 PM or 14:30.", true); addTime.Focus(); return; }
+            if (!Ui.ReadTime(addTime, out hhmm))
+            {
+                panelError.Text = "Time not recognised. Try 2:30 PM or 14:30.";
+                panelError.Visibility = Visibility.Visible;
+                ShowTimeBox();
+                return;
+            }
             string title, d, tm;
             U.QuickParse(QuickAdd.Text, out title, out d, out tm);
             TaskItem t = svc.Add(title, addDate.Value, hhmm, Ui.GetRemind(addRemind), Ui.GetRepeat(addRepeat), "");
-            ResetQuickAdd();
+            CloseAddPanel();
             string msg = "Added for " + U.FmtDate(t.Date) + ", " + U.FmtTime(t.Time) + " · " +
                 (t.RemindBefore < 0 ? "no reminder" : "reminder " + U.RemindLabel(t.RemindBefore).ToLowerInvariant());
             if (t.Repeat != null && t.Repeat != "none") msg += " · " + U.RepeatShort(t.Repeat).ToLowerInvariant();
             Hint(msg);
-            QuickAdd.Focus();
         }
-
-        /* For the screenshot test: type into the add box */
-        public void TypeQuickAdd(string text) { QuickAdd.Text = text; }
 
         void Hint(string text) { Hint(text, false); }
 
@@ -360,6 +483,13 @@ namespace MyTaskManager
             foreach (string b in new[] { "AddBtn", "PinBtn", "ColorBtn", "OpenBtn", "HideBtn" }) ((Button)Win.FindName(b)).Foreground = Night ? Hex("#C9CCD4") : Hex("#4A4436");
             QuickAdd.Background = Night ? Hex("#1FFFFFFF") : Hex("#A6FFFFFF");
             QuickAdd.BorderBrush = Night ? Hex("#2EFFFFFF") : Hex("#26000000");
+            PaperColor = Hex(p[0]);
+            AddLine.Background = QuickAdd.Background;
+            AddLine.BorderBrush = Night ? Hex("#59FFFFFF") : Hex("#4D000000");
+            AddLine.Foreground = Muted;
+            AddPanel.Background = Hex(p[0]);
+            AddPanel.BorderBrush = Hex(p[2]);
+            RefreshPills();
             Grip.Foreground = Night ? Hex("#73FFFFFF") : Hex("#59000000");
             if (QuickHint.Visibility == Visibility.Visible) QuickHint.Foreground = Good;
             if (Rows != null && Rows.Children.Count > 0) Render();
@@ -671,8 +801,23 @@ namespace MyTaskManager
         </Border>
         <Border DockPanel.Dock='Bottom' Padding='10,6,10,12'>
           <StackPanel x:Name='AddArea'>
-            <TextBox x:Name='QuickAdd' Style='{StaticResource Input}' Tag='Add a task' MinHeight='34'
-                     FontSize='12.5'/>
+            <Button x:Name='AddLine' Height='34' Cursor='Hand' FocusVisualStyle='{StaticResource FocusRing}' ToolTip='Add a task'>
+              <Button.Template>
+                <ControlTemplate TargetType='Button'>
+                  <Grid Background='Transparent'>
+                    <Rectangle x:Name='Dash' RadiusX='8' RadiusY='8' StrokeThickness='1' StrokeDashArray='4 3' Stroke='{TemplateBinding BorderBrush}' Fill='{TemplateBinding Background}'/>
+                    <ContentPresenter Margin='11,0' VerticalAlignment='Center'/>
+                  </Grid>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Dash' Property='StrokeDashArray' Value='1 0'/></Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate>
+              </Button.Template>
+              <StackPanel Orientation='Horizontal'>
+                <Path Data='M5,0 L5,10 M0,5 L10,5' Width='10' Height='10' Stroke='{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}' StrokeThickness='1.6' SnapsToDevicePixels='True' VerticalAlignment='Center' Margin='0,0,9,0'/>
+                <TextBlock Text='Add a task' FontSize='12.5' VerticalAlignment='Center'/>
+              </StackPanel>
+            </Button>
             <TextBlock x:Name='QuickHint' FontSize='11.5' Foreground='#1F7A4D' Margin='4,5,0,0' TextWrapping='Wrap' Visibility='Collapsed'/>
           </StackPanel>
         </Border>
@@ -680,6 +825,14 @@ namespace MyTaskManager
           <StackPanel x:Name='Rows' Margin='6,0,8,4'/>
         </ScrollViewer>
       </DockPanel>
+      <Border x:Name='AddPanel' VerticalAlignment='Bottom' Visibility='Collapsed' CornerRadius='0,0,9,9' BorderThickness='0,1,0,0'>
+        <Border.RenderTransform><TranslateTransform/></Border.RenderTransform>
+        <ScrollViewer VerticalScrollBarVisibility='Auto' Focusable='False'>
+          <StackPanel x:Name='PanelBody' Margin='12,10,12,12'>
+            <TextBox x:Name='QuickAdd' Style='{StaticResource Input}' Tag='What do you need to do?' MinHeight='34' FontSize='12.5'/>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
       <Thumb x:Name='Grip' Width='16' Height='16' HorizontalAlignment='Right' VerticalAlignment='Bottom' Margin='0,0,1,1' Cursor='SizeNWSE' ToolTip='Drag to resize'>
         <Thumb.Template>
           <ControlTemplate TargetType='Thumb'>

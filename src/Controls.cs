@@ -38,14 +38,7 @@ namespace MyTaskManager
                 VerticalOffset = 4, PopupAnimation = PopupAnimation.Fade,
                 Child = Theme.Ref(Theme.Ref(new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(6), Child = cal }, Border.BackgroundProperty, "Surface"), Border.BorderBrushProperty, "Line")
             };
-            btn.Click += delegate
-            {
-                suppress = true;
-                cal.SelectedDate = U.ParseYmd(value);
-                cal.DisplayDate = U.ParseYmd(value);
-                suppress = false;
-                pop.IsOpen = true;
-            };
+            btn.Click += delegate { OpenAt(btn); };
             cal.SelectedDatesChanged += delegate
             {
                 if (suppress || !cal.SelectedDate.HasValue) return;
@@ -60,6 +53,17 @@ namespace MyTaskManager
         }
 
         void AutomationName(string n) { System.Windows.Automation.AutomationProperties.SetName(btn, n); }
+
+        /* Opens the calendar under any element (the sticky note's "Other day" button uses this) */
+        public void OpenAt(UIElement target)
+        {
+            suppress = true;
+            cal.SelectedDate = U.ParseYmd(value);
+            cal.DisplayDate = U.ParseYmd(value);
+            suppress = false;
+            pop.PlacementTarget = target;
+            pop.IsOpen = true;
+        }
 
         public string Value
         {

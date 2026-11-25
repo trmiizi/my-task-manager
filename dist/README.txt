@@ -17,11 +17,12 @@ THE STICKY NOTE
 - Shows overdue, today's and tomorrow's tasks (or the whole week: ... button).
 - Tick box: click once = Done (green tick), twice = Not done (red cross),
   three times = back to pending. Right-click a task for more options.
-- Add a task by typing at the bottom, e.g.
+- Click "+ Add a task" at the bottom (or + at the top). A panel slides up:
+  type the task, tap a day (Today / Tomorrow / Other day) and a time
+  (9am / 12pm / 3pm / 6pm / Other), then press Enter or click Add task.
+  Typing the day and time also works, e.g.
      Call Ali tomorrow 3pm
      Hantar borang esok 9.30am
-  While you type, Day / Time / Reminder / Repeat boxes appear so you can
-  adjust them. Press Enter or click Add.
 - Drag the top bar to move it. Drag any edge or corner to resize it,
   like a normal window. (Locking the note stops both.)
 - Top buttons: + add, pin (keep on top), ... (whole week, lock in place,

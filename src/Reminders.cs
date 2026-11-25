@@ -192,13 +192,6 @@ namespace MyTaskManager
         WindowStyle='None' AllowsTransparency='True' Background='Transparent' Topmost='True' ShowInTaskbar='False'
         ShowActivated='False' ResizeMode='NoResize' SizeToContent='Height' Width='500' FontFamily='Segoe UI' FontSize='13.5'
         Foreground='{DynamicResource Text}' UseLayoutRounding='True' TextOptions.TextFormattingMode='Display' Title='Reminder'>
-  <Window.Resources>
-    <Style x:Key='Ink' TargetType='Button' BasedOn='{StaticResource Btn}'>
-      <Setter Property='Background' Value='{DynamicResource Text}'/>
-      <Setter Property='BorderBrush' Value='{DynamicResource Text}'/>
-      <Setter Property='Foreground' Value='{DynamicResource Surface}'/>
-    </Style>
-  </Window.Resources>
   <Border Margin='12' Background='{DynamicResource Surface}' CornerRadius='10' BorderBrush='{DynamicResource Line}' BorderThickness='1'>
     <Border.Effect><DropShadowEffect BlurRadius='24' ShadowDepth='6' Direction='270' Opacity='0.22'/></Border.Effect>
     <Grid>

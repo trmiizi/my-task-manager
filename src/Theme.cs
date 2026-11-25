@@ -159,6 +159,12 @@ namespace MyTaskManager
     <Setter Property='BorderBrush' Value='{DynamicResource Accent}'/>
     <Setter Property='Foreground' Value='{DynamicResource OnAccent}'/>
   </Style>
+  <!-- dark main button of the pop-ups, reminder card and note add panel -->
+  <Style x:Key='Ink' TargetType='Button' BasedOn='{StaticResource Btn}'>
+    <Setter Property='Background' Value='{DynamicResource Text}'/>
+    <Setter Property='BorderBrush' Value='{DynamicResource Text}'/>
+    <Setter Property='Foreground' Value='{DynamicResource Surface}'/>
+  </Style>
   <Style x:Key='Ghost' TargetType='Button' BasedOn='{StaticResource Btn}'>
     <Setter Property='Background' Value='Transparent'/>
     <Setter Property='BorderBrush' Value='Transparent'/>

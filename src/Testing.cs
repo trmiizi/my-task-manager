@@ -372,9 +372,19 @@ namespace MyTaskManager
             note.Win.Left = -30000; note.Win.Top = 0; note.Win.ShowActivated = false;
             note.Win.Show();
             Save(note.Win, Path.Combine(dir, "note.png"));
-            note.TypeQuickAdd("Call Ali tomorrow 3pm");
+            note.OpenAddPanel("Call Ali tomorrow 3pm"); PumpFor(300);
             Save(note.Win, Path.Combine(dir, "note-add-options.png"));
             note.Win.Close();
+
+            // a short note: the add panel must scroll, never cover the top bar or get cut off
+            double keepW = svc.Settings.NoteWidth, keepH = svc.Settings.NoteHeight;
+            StickyNote sn = new StickyNote(svc);
+            sn.Win.Left = -30000; sn.Win.Top = 0; sn.Win.ShowActivated = false; sn.Win.Height = 260;
+            sn.Win.Show();
+            sn.OpenAddPanel("Pay rent friday 5pm"); PumpFor(300);
+            Save(sn.Win, Path.Combine(dir, "note-add-short.png"));
+            sn.Win.Close();
+            PumpFor(800); svc.Settings.NoteWidth = keepW; svc.Settings.NoteHeight = keepH;   // the note saves its size; keep later shots full height
 
             svc.Settings.NoteRange = "week"; svc.Settings.NoteLocked = true;
             StickyNote wn = new StickyNote(svc);
@@ -423,7 +433,7 @@ namespace MyTaskManager
             StickyNote dn = new StickyNote(svc);
             dn.Win.Left = -30000; dn.Win.Top = 0; dn.Win.ShowActivated = false;
             dn.Win.Show();
-            dn.TypeQuickAdd("Call Ali tomorrow 3pm");
+            dn.OpenAddPanel("Call Ali tomorrow 3pm"); PumpFor(300);
             Save(dn.Win, Path.Combine(dir, "dark-note.png"));
             dn.Win.Close();
             // a yellow note while the app is dark keeps its own light controls
@@ -431,7 +441,7 @@ namespace MyTaskManager
             StickyNote yn = new StickyNote(svc);
             yn.Win.Left = -30000; yn.Win.Top = 0; yn.Win.ShowActivated = false;
             yn.Win.Show();
-            yn.TypeQuickAdd("Call Ali tomorrow 3pm");
+            yn.OpenAddPanel("Call Ali tomorrow 3pm"); PumpFor(300);
             Save(yn.Win, Path.Combine(dir, "dark-app-yellow-note.png"));
             yn.Win.Close();
             Theme.Apply(false);
@@ -480,6 +490,13 @@ namespace MyTaskManager
                     return new System.Drawing.Icon(s, System.Windows.Forms.SystemInformation.SmallIconSize);
             }
             catch { return null; }
+        }
+
+        /* Lets short animations (the note's add panel slide) finish before a capture */
+        static void PumpFor(int ms)
+        {
+            DateTime end = DateTime.Now.AddMilliseconds(ms);
+            while (DateTime.Now < end) { Pump(); System.Threading.Thread.Sleep(15); }
         }
 
         static void Pump()
