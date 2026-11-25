@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 
 // Set by release.ps1. The app compares this with the latest GitHub release to offer updates.
 [assembly: AssemblyVersion("2.1.0.0")]
