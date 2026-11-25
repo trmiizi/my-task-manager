@@ -662,7 +662,7 @@ namespace MyTaskManager
         </Border>
         <Border DockPanel.Dock='Bottom' Padding='10,6,10,12'>
           <StackPanel x:Name='AddArea'>
-            <TextBox x:Name='QuickAdd' Style='{StaticResource Input}' Tag='+ Add a task, e.g. Call Ali tomorrow 3pm' MinHeight='34'
+            <TextBox x:Name='QuickAdd' Style='{StaticResource Input}' Tag='Add a task' MinHeight='34'
                      FontSize='12.5'/>
             <TextBlock x:Name='QuickHint' FontSize='11.5' Foreground='#1F7A4D' Margin='4,5,0,0' TextWrapping='Wrap' Visibility='Collapsed'/>
           </StackPanel>
