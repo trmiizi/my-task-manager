@@ -13,6 +13,9 @@ namespace MyTaskManager
 
         public static readonly Entry[] All =
         {
+            new Entry("2.1.4", "2026-11-25",
+                "New look for reminder pop-ups: the time on the left, Done and Snooze on the right.",
+                "Other pop-ups match it. Exit now offers Keep running, so reminders don't stop by mistake."),
             new Entry("2.1.3", "2026-11-25",
                 "Settings are shorter and easier to scan."),
             new Entry("2.1.2", "2026-11-25",
