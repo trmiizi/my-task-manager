@@ -41,6 +41,8 @@ namespace MyTaskManager
         [ScriptIgnore] public DateTime RemindAt { get { return Due.AddMinutes(-Math.Max(0, RemindBefore)); } }
         [ScriptIgnore] public string ReminderKey { get { return Date + "T" + Time + "|" + RemindBefore; } }
         [ScriptIgnore] public bool Closed { get { return Done || Skipped; } }
+        /* Not ticked and its time has passed (earlier today counts too). */
+        public bool IsLate(DateTime now) { return !Closed && Due < now; }
         [ScriptIgnore] public DateTime CompletedTime { get { return U.ParseStamp(CompletedAt); } }
 
         /* copies the task; the checklist is copied too (not shared) */

@@ -18,7 +18,7 @@ namespace MyTaskManager
         /* Colour tokens. Dark keeps the app's cool slate + indigo identity instead of going flat black:
            surfaces step up in lightness (Bg < Surface < Surface2) the way light mode steps down. */
         static readonly string[] Keys =  { "Bg",      "Surface", "Surface2", "Line",    "LineStrong", "Text",    "Text2",   "Text3",   "Accent",  "AccentSoft", "Ok",      "OkSoft",  "Warn",    "WarnSoft", "Danger",  "DangerSoft", "Hover",     "Press",     "Thumb",   "Tip",     "OnAccent" };
-        static readonly string[] Light = { "#F4F5F8", "#FFFFFF", "#F7F8FA",  "#E3E6EC", "#CDD2DB",    "#161A23", "#5A6272", "#8A91A0", "#3B5BDB", "#E8EDFF",    "#1F9D61", "#E2F5EC", "#B86E00", "#FFF3DC",  "#D0383E", "#FDE8E9",    "#0C000000", "#1A000000", "#C3C8D1", "#1F2430", "#FFFFFF" };
+        static readonly string[] Light = { "#F4F5F8", "#FFFFFF", "#F7F8FA",  "#E3E6EC", "#CDD2DB",    "#161A23", "#5A6272", "#666D7B", "#3B5BDB", "#E8EDFF",    "#157A4A", "#E2F5EC", "#8F5300", "#FFF3DC",  "#C0313A", "#FDE8E9",    "#0C000000", "#1A000000", "#C3C8D1", "#1F2430", "#FFFFFF" };
         static readonly string[] Dark =  { "#12151C", "#1A1E27", "#222733",  "#2C3240", "#3B4252",    "#E7EAF1", "#A2AABA", "#7A8295", "#7B93F5", "#222A45",    "#3DBE83", "#16332A", "#E3A445", "#382D18",  "#F07178", "#3A1C21",    "#12FFFFFF", "#22FFFFFF", "#3E4556", "#2C3240", "#10142A" };
 
         public static bool IsDark { get; private set; }
@@ -88,14 +88,14 @@ namespace MyTaskManager
   <SolidColorBrush x:Key='LineStrong' Color='#CDD2DB'/>
   <SolidColorBrush x:Key='Text' Color='#161A23'/>
   <SolidColorBrush x:Key='Text2' Color='#5A6272'/>
-  <SolidColorBrush x:Key='Text3' Color='#8A91A0'/>
+  <SolidColorBrush x:Key='Text3' Color='#666D7B'/>
   <SolidColorBrush x:Key='Accent' Color='#3B5BDB'/>
   <SolidColorBrush x:Key='AccentSoft' Color='#E8EDFF'/>
-  <SolidColorBrush x:Key='Ok' Color='#1F9D61'/>
+  <SolidColorBrush x:Key='Ok' Color='#157A4A'/>
   <SolidColorBrush x:Key='OkSoft' Color='#E2F5EC'/>
-  <SolidColorBrush x:Key='Warn' Color='#B86E00'/>
+  <SolidColorBrush x:Key='Warn' Color='#8F5300'/>
   <SolidColorBrush x:Key='WarnSoft' Color='#FFF3DC'/>
-  <SolidColorBrush x:Key='Danger' Color='#D0383E'/>
+  <SolidColorBrush x:Key='Danger' Color='#C0313A'/>
   <SolidColorBrush x:Key='DangerSoft' Color='#FDE8E9'/>
   <FontFamily x:Key='IconFont'>Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 

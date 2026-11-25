@@ -41,7 +41,7 @@ THE FULL APP (click the tray icon by the clock, or the open button on the note)
 - Archive: tidy away finished tasks with "Archive ticked" (Today / Tomorrow),
   "Archive all" (History), the box icon on a task, or the note's ... menu.
   See them again in History > Archived; the up-arrow icon brings one back.
-- "Hide & show sticky note" button (top right) tucks the app away by the clock.
+- "Switch to sticky note" button (top right) hides the app (it keeps running by the clock) and shows the note.
 - Moon button (top right) or Settings > Appearance: dark mode.
 - Settings & backup: test reminder, sound, sticky note options,
   start with Windows, export/import backup, remove from this PC.

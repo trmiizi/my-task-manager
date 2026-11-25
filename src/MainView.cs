@@ -287,7 +287,8 @@ namespace MyTaskManager
         {
             string td = U.Today, tm = U.Tomorrow;
             List<TaskItem> pending = svc.Tasks.Where(t => !t.Closed).ToList();
-            int overdue = pending.Count(t => string.CompareOrdinal(t.Date, td) < 0);
+            DateTime now = DateTime.Now;
+            int overdue = pending.Count(t => t.IsLate(now));
             SetCount("today", pending.Count(t => string.CompareOrdinal(t.Date, td) <= 0), overdue > 0);
             SetCount("tomorrow", pending.Count(t => t.Date == tm), false);
             SetCount("upcoming", pending.Count(t => string.CompareOrdinal(t.Date, tm) > 0), false);
@@ -417,9 +418,11 @@ namespace MyTaskManager
             if (View == "whatsnew") RenderWhatsNew();
             else if (View == "today")
             {
-                List<TaskItem> overdue = svc.Tasks.Where(t => !t.Closed && string.CompareOrdinal(t.Date, td) < 0).ToList();
+                DateTime now = DateTime.Now;
+                // overdue = anything not ticked whose time has passed, including earlier today
+                List<TaskItem> overdue = svc.Tasks.Where(t => t.IsLate(now)).ToList();
                 overdue.Sort(byDue);
-                List<TaskItem> today = svc.Tasks.Where(t => t.Date == td && !t.Archived).OrderBy(t => t.Closed).ThenBy(t => t.Due).ToList();
+                List<TaskItem> today = svc.Tasks.Where(t => t.Date == td && !t.Archived && !t.IsLate(now)).OrderBy(t => t.Closed).ThenBy(t => t.Due).ToList();
                 if (overdue.Count > 0) { Section("Overdue · " + overdue.Count, true); ListCard(overdue, true, false); }
                 Section("Today · " + today.Count(t => !t.Closed) + " left", false, ArchiveAction(today));
                 if (today.Count > 0) ListCard(today, false, false);
@@ -557,7 +560,7 @@ namespace MyTaskManager
                 TimeSpan diff = t.Due - DateTime.Now;
                 string kind = diff.TotalMinutes < 0 ? "late" : diff.TotalMinutes < 60 ? "soon" : "";
                 string when = U.FmtTime(t.Time);
-                if (showDate) when = U.FmtDate(t.Date) + ", " + when;
+                if (showDate && t.Date != U.Today) when = U.FmtDate(t.Date) + ", " + when;
                 if (string.CompareOrdinal(t.Date, U.Tomorrow) <= 0) when += " · " + U.Rel(t.Due);
                 meta.Children.Add(Ui.Pill("", when, kind));
                 if (t.HasReminder)
@@ -731,10 +734,10 @@ namespace MyTaskManager
             </Grid>
           </StackPanel>
           <Button x:Name='ThemeBtn' Style='{StaticResource Btn}' Margin='18,0,0,0' VerticalAlignment='Bottom' Padding='10,7' FontFamily='{StaticResource IconFont}' FontSize='15' FontWeight='Normal'/>
-          <Button x:Name='ToNoteBtn' Style='{StaticResource Btn}' Margin='8,0,0,0' VerticalAlignment='Bottom' ToolTip='Hide this window (it stays by the clock) and show the sticky note on the desktop'>
+          <Button x:Name='ToNoteBtn' Style='{StaticResource Btn}' Margin='8,0,0,0' VerticalAlignment='Bottom' ToolTip='Hides this window and shows the sticky note. The app keeps running in the tray by the clock.'>
             <StackPanel Orientation='Horizontal'>
               <TextBlock Text='&#xE7C4;' FontFamily='{StaticResource IconFont}' FontSize='14' VerticalAlignment='Center' Margin='0,0,8,0'/>
-              <TextBlock Text='Hide &amp; show sticky note' VerticalAlignment='Center'/>
+              <TextBlock Text='Switch to sticky note' VerticalAlignment='Center'/>
             </StackPanel>
           </Button>
           </StackPanel>

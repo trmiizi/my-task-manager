@@ -42,7 +42,7 @@ namespace MyTaskManager
         // ink colours: dark on the paper colours, light on "night"
         bool Night { get { return svc.Settings.NoteColor == "night"; } }
         Brush Ink { get { return Night ? Hex("#E8E6DF") : Hex("#2B2718"); } }
-        Brush Muted { get { return Night ? Hex("#9FA4B0") : Hex("#7D7766"); } }
+        Brush Muted { get { return Night ? Hex("#9FA4B0") : Hex("#625C4A"); } }
         Brush Late { get { return Night ? Hex("#FF858A") : Hex("#C2333A"); } }
         Brush Good { get { return Night ? Hex("#6FD8A3") : Hex("#1F7A4D"); } }
 
@@ -347,7 +347,7 @@ namespace MyTaskManager
             // controls inside the note (add box, pickers, tick boxes) use a palette that suits the paper, whatever the app theme
             Theme.Fill(Win.Resources, Night);
             NoteTitle.Foreground = Ink;
-            NoteSub.Foreground = LockMark.Foreground = Night ? Hex("#A9ADB8") : Hex("#6B6450");
+            NoteSub.Foreground = LockMark.Foreground = Night ? Hex("#A9ADB8") : Hex("#5E5846");
             foreach (string b in new[] { "AddBtn", "PinBtn", "ColorBtn", "OpenBtn", "HideBtn" }) ((Button)Win.FindName(b)).Foreground = Night ? Hex("#C9CCD4") : Hex("#4A4436");
             QuickAdd.Background = Night ? Hex("#1FFFFFFF") : Hex("#A6FFFFFF");
             QuickAdd.BorderBrush = Night ? Hex("#2EFFFFFF") : Hex("#26000000");
@@ -527,8 +527,9 @@ namespace MyTaskManager
             string td = U.Today, tm = U.Tomorrow;
             bool week = RangeKey() == "week";
             string weekEnd = U.Ymd(DateTime.Today.AddDays(6));
-            List<TaskItem> overdue = svc.Tasks.Where(t => !t.Closed && string.CompareOrdinal(t.Date, td) < 0).OrderBy(t => t.Due).ToList();
-            List<TaskItem> today = svc.Tasks.Where(t => t.Date == td && !t.Archived).OrderBy(t => t.Closed).ThenBy(t => t.Due).ToList();
+            DateTime now = DateTime.Now;
+            List<TaskItem> overdue = svc.Tasks.Where(t => t.IsLate(now)).OrderBy(t => t.Due).ToList();
+            List<TaskItem> today = svc.Tasks.Where(t => t.Date == td && !t.Archived && !t.IsLate(now)).OrderBy(t => t.Closed).ThenBy(t => t.Due).ToList();
             List<TaskItem> tomorrow = svc.Tasks.Where(t => t.Date == tm && !t.Archived).OrderBy(t => t.Closed).ThenBy(t => t.Due).ToList();
 
             int left = overdue.Count + today.Count(t => !t.Closed);
@@ -617,7 +618,7 @@ namespace MyTaskManager
             {
                 bool late = !t.Closed && t.Due < DateTime.Now;
                 string when = U.FmtTime(t.Time);
-                if (showDate) when = U.FmtDate(t.Date).Replace("Yesterday", "Yest.") + " " + when;
+                if (showDate && t.Date != U.Today) when =U.FmtDate(t.Date).Replace("Yesterday", "Yest.") + " " + when;
                 right.Children.Add(new TextBlock { Text = when, FontSize = 11.5, Foreground = late ? Late : Muted, FontWeight = late ? FontWeights.SemiBold : FontWeights.Normal });
             }
             Grid.SetColumn(right, 2);

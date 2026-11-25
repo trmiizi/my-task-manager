@@ -219,9 +219,10 @@ namespace MyTaskManager
         <TextBlock x:Name='NotesText' Foreground='{DynamicResource Text2}' TextWrapping='Wrap' Margin='0,2,8,0'/>
         <WrapPanel Margin='0,12,0,0'>
           <Button x:Name='DoneBtn' Style='{StaticResource Ink}' Margin='0,0,6,0' Padding='11,6' Content='Done'/>
-          <Button x:Name='NotDoneBtn' Style='{StaticResource Btn}' Margin='0,0,6,0' Padding='11,6' Content='Not done'/>
           <Button x:Name='Snooze1' Style='{StaticResource Btn}' Content='Snooze 10 min' Margin='0,0,6,0' Padding='11,6'/>
-          <Button x:Name='Snooze2' Style='{StaticResource Btn}' Content='1 hour' Padding='11,6'/>
+          <Button x:Name='Snooze2' Style='{StaticResource Btn}' Content='1 hour' Margin='0,0,16,0' Padding='11,6'/>
+          <!-- Not done is final, so it sits apart from Done to avoid a slip of the mouse -->
+          <Button x:Name='NotDoneBtn' Style='{StaticResource Btn}' Padding='11,6' Content='Not done'/>
         </WrapPanel>
         <TextBlock x:Name='NagText' FontSize='11.5' Foreground='{DynamicResource Text3}' Margin='0,8,0,0' Visibility='Collapsed'/>
       </StackPanel>

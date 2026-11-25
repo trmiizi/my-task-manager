@@ -27,6 +27,13 @@ namespace MyTaskManager
             Action<string, bool> check = (name, ok) => { sb.AppendLine((ok ? "PASS  " : "FAIL  ") + name); if (!ok) fails++; };
             try
             {
+                DateTime noon = new DateTime(2026, 11, 25, 12, 0, 0);
+                TaskItem late = new TaskItem { Date = "2026-11-25", Time = "08:30" };
+                check("earlier today counts as overdue", late.IsLate(noon));
+                check("later today is not overdue", !new TaskItem { Date = "2026-11-25", Time = "17:00" }.IsLate(noon));
+                check("yesterday is overdue", new TaskItem { Date = "2026-11-24", Time = "17:00" }.IsLate(noon));
+                late.Done = true; check("ticked task is never overdue", !late.IsLate(noon));
+                late.Done = false; late.Skipped = true; check("not-done task is never overdue", !late.IsLate(noon));
                 check("month clamp 31 Jan -> 28 Feb", U.AddMonths("2026-01-31", 1, 31) == "2026-02-28");
                 check("month clamp keeps anchor 28 Feb -> 31 Mar", U.AddMonths("2026-02-28", 1, 31) == "2026-03-31");
                 check("leap year 31 Jan 2028 -> 29 Feb", U.AddMonths("2028-01-31", 1, 31) == "2028-02-29");
