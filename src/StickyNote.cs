@@ -206,6 +206,7 @@ namespace MyTaskManager
             {
                 if (e.Key != Key.Enter && e.Key != Key.Escape) return;
                 if (addTime.IsDropDownOpen || addRemind.IsDropDownOpen || addRepeat.IsDropDownOpen) return;
+                if (addDate.IsOpen) { if (e.Key == Key.Escape) { addDate.Close(); e.Handled = true; } return; }
                 if (e.Key == Key.Enter && e.OriginalSource is ButtonBase) return;   // Enter on a focused button clicks it
                 e.Handled = true;
                 if (e.Key == Key.Escape) CloseAddPanel();
@@ -271,7 +272,7 @@ namespace MyTaskManager
             addTime.ToolTip = "Time (pick one or type, e.g. 2:45 PM)";
             addRemind.ToolTip = "When to remind you";
             addRepeat.ToolTip = "Repeat";
-            addDate.Changed += delegate { if (!syncing) dateTouched = true; RefreshPills(); };
+            addDate.Changed += delegate { if (!syncing) { dateTouched = true; BackToText(); } RefreshPills(); };
             addTime.SelectionChanged += delegate { if (!syncing) timeTouched = true; Win.Dispatcher.BeginInvoke(new Action(RefreshPills)); };
             addTime.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
                 new TextChangedEventHandler((o, e) => { if (!syncing) timeTouched = true; RefreshPills(); }));
@@ -297,7 +298,7 @@ namespace MyTaskManager
                 string hhmm = TimePresets[i];
                 Button b = Pill(names[i]);
                 b.ToolTip = U.FmtTime(hhmm);
-                b.Click += delegate { showTimeBox = false; Ui.SetTime(addTime, hhmm); timeTouched = true; RefreshPills(); };
+                b.Click += delegate { showTimeBox = false; Ui.SetTime(addTime, hhmm); timeTouched = true; RefreshPills(); BackToText(); };
                 timePills[i] = b;
                 times.Children.Add(b);
             }
@@ -311,6 +312,8 @@ namespace MyTaskManager
             body.Children.Add(times);
             addTime.Margin = new Thickness(0, 1, 0, 0);
             body.Children.Add(addTime);
+            addDate.Root.Visibility = Visibility.Collapsed;   // only its calendar is used; in the tree so it takes the note's colours
+            body.Children.Add(addDate.Root);
 
             Grid g = new Grid { Margin = new Thickness(0, 9, 0, 0) };
             g.ColumnDefinitions.Add(new ColumnDefinition());
@@ -378,6 +381,14 @@ namespace MyTaskManager
             panelError.Foreground = Late;
         }
 
+        /* After clicking a day/time button or picking a date, typing and Enter go to the task box again */
+        void BackToText()
+        {
+            if (showTimeBox) return;   // the typed-time box keeps the keyboard
+            QuickAdd.Focus();
+            QuickAdd.CaretIndex = QuickAdd.Text.Length;
+        }
+
         void ShowTimeBox()
         {
             showTimeBox = true;
@@ -407,6 +418,7 @@ namespace MyTaskManager
 
         void CloseAddPanel()
         {
+            addDate.Close();
             ResetQuickAdd();
             AddPanel.Visibility = Visibility.Collapsed;
             AddLine.Visibility = Visibility.Visible;

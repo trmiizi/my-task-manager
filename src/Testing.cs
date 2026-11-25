@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -18,6 +20,61 @@ namespace MyTaskManager
         {
             try { using (new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.None)) return true; }
             catch { return false; }
+        }
+
+        /* Sticky note add panel, built off-screen with in-memory demo data (no popups are opened, nothing on the real screen) */
+        static void NoteUiChecks(Action<string, bool> check)
+        {
+            if (Application.Current == null) new App().Resources = Theme.Load();
+            TaskService svc = new TaskService(false);
+            StickyNote note = new StickyNote(svc);
+            note.Win.Left = -30000; note.Win.Top = 0; note.Win.ShowActivated = false;
+            note.Win.Show();
+            try
+            {
+                TextBox box = (TextBox)note.Win.FindName("QuickAdd");
+                foreach (string label in new[] { "Today", "Tomorrow", "3pm" })
+                {
+                    note.OpenAddPanel("Call Ali"); note.Win.UpdateLayout(); Flush();
+                    Button pill = FindButton(note.Win, label);
+                    pill.Focus();
+                    pill.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                    Flush();
+                    check("note panel: after clicking " + label + ", typing and Enter go to the task box",
+                        FocusManager.GetFocusedElement(note.Win) == box);
+                }
+                Popup cal = FindPopup(note.Win);
+                check("note panel: the Other day calendar belongs to the note (note colours, closes with the panel)", cal != null);
+            }
+            finally { note.Win.Close(); }
+        }
+
+        static void Flush() { Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(delegate { })); }
+
+        static Button FindButton(DependencyObject d, string content)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                DependencyObject c = VisualTreeHelper.GetChild(d, i);
+                Button b = c as Button;
+                if (b != null && content.Equals(b.Content as string)) return b;
+                Button r = FindButton(c, content);
+                if (r != null) return r;
+            }
+            return null;
+        }
+
+        static Popup FindPopup(DependencyObject d)
+        {
+            foreach (object o in LogicalTreeHelper.GetChildren(d))
+            {
+                DependencyObject c = o as DependencyObject;
+                if (c == null) continue;
+                if (c is Popup) return (Popup)c;
+                Popup r = FindPopup(c);
+                if (r != null) return r;
+            }
+            return null;
         }
 
         public static int Run(string outFile)
@@ -268,6 +325,8 @@ namespace MyTaskManager
                     Store.Ser().Deserialize<AppSettings>("{}").NoteRange == "2days" && !Store.Ser().Deserialize<AppSettings>("{}").NoteLocked);
             }
             catch (Exception ex) { sb.AppendLine("FAIL  exception: " + ex); fails++; }
+            try { NoteUiChecks(check); }
+            catch (Exception ex) { sb.AppendLine("FAIL  note UI exception: " + ex); fails++; }
             sb.AppendLine(fails == 0 ? "ALL PASSED" : fails + " FAILED");
             File.WriteAllText(outFile, sb.ToString());
             return fails;

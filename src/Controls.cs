@@ -65,6 +65,9 @@ namespace MyTaskManager
             pop.IsOpen = true;
         }
 
+        public bool IsOpen { get { return pop.IsOpen; } }
+        public void Close() { pop.IsOpen = false; }
+
         public string Value
         {
             get { return value; }
