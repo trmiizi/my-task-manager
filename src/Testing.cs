@@ -34,6 +34,12 @@ namespace MyTaskManager
                 check("yesterday is overdue", new TaskItem { Date = "2026-11-24", Time = "17:00" }.IsLate(noon));
                 late.Done = true; check("ticked task is never overdue", !late.IsLate(noon));
                 late.Done = false; late.Skipped = true; check("not-done task is never overdue", !late.IsLate(noon));
+                check("note preset 15:00 -> 2", StickyNote.PresetIndex("15:00") == 2);
+                check("note preset 14:45 -> -1", StickyNote.PresetIndex("14:45") == -1);
+                check("note preset null -> -1", StickyNote.PresetIndex(null) == -1);
+                check("note day today", StickyNote.DayKind(U.Today) == "today");
+                check("note day tomorrow", StickyNote.DayKind(U.Tomorrow) == "tomorrow");
+                check("note day other", StickyNote.DayKind(U.Ymd(DateTime.Today.AddDays(5))) == "other");
                 check("month clamp 31 Jan -> 28 Feb", U.AddMonths("2026-01-31", 1, 31) == "2026-02-28");
                 check("month clamp keeps anchor 28 Feb -> 31 Mar", U.AddMonths("2026-02-28", 1, 31) == "2026-03-31");
                 check("leap year 31 Jan 2028 -> 29 Feb", U.AddMonths("2028-01-31", 1, 31) == "2028-02-29");

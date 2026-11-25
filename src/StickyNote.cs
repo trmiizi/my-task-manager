@@ -205,6 +205,15 @@ namespace MyTaskManager
 
         void SaveLater() { saveTimer.Stop(); saveTimer.Start(); }
 
+        /* Add panel: the quick time buttons (9am, 12pm, 3pm, 6pm) */
+        public static readonly string[] TimePresets = { "09:00", "12:00", "15:00", "18:00" };
+
+        /* Which time button a time belongs to, or -1 (not a preset / no time) */
+        public static int PresetIndex(string hhmm) { return hhmm == null ? -1 : Array.IndexOf(TimePresets, hhmm); }
+
+        /* Which day button a date belongs to: "today", "tomorrow" or "other" */
+        public static string DayKind(string ymd) { return ymd == U.Today ? "today" : ymd == U.Tomorrow ? "tomorrow" : "other"; }
+
         /* Window edge zones: the 10px shadow margin plus a few px into the paper. */
         public const int EdgeBand = 15, CornerBand = 24;
 
