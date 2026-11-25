@@ -108,7 +108,8 @@ namespace MyTaskManager
             main.SwitchToNote = () => { note.SetVisible(true); main.Win.Close(); };
             main.UninstallRequested = RemoveFromPc;
             main.ThemeChanged = SetTheme;
-            main.CheckUpdates = () => CheckForUpdates(true);
+            main.CheckUpdates = CheckForUpdates;
+            main.InstallUpdate = InstallUpdate;
             SystemEvents.UserPreferenceChanged += (s, e) => Dispatcher.BeginInvoke(new Action(delegate
             {
                 if (svc.Settings.Theme == "system" && Theme.WantsDark("system") != Theme.IsDark) SetTheme("system");
@@ -137,25 +138,22 @@ namespace MyTaskManager
             if (!startHidden) main.ShowAndActivate();
             Dispatcher.BeginInvoke(new Action(Tick), DispatcherPriority.ApplicationIdle);
 
-            // updates: first check shortly after start, then once a day
-            updateTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(justUpdated ? 3600 : 45) };
-            updateTimer.Tick += delegate { updateTimer.Interval = TimeSpan.FromHours(24); CheckForUpdates(false); };
-            updateTimer.Start();
+            // updates only happen when the user asks: Settings > Check for updates > Update now
             if (justUpdated)
                 Dispatcher.BeginInvoke(new Action(() => Dialog.Info(main.Win.IsVisible ? main.Win : null, "Updated to version " + Updater.CurrentText,
                     "My Task Manager is up to date. Your tasks and settings are just as you left them.", Dialog.Kind.Ok)), DispatcherPriority.ApplicationIdle);
         }
 
         /* ---------------------------------------------------------------- updates */
-        DispatcherTimer updateTimer;
         bool checkingUpdate, installingUpdate;
-        string offeredTag;
+        Updater.Release available;
 
-        void CheckForUpdates(bool manual)
+        void CheckForUpdates()
         {
             if (checkingUpdate || installingUpdate) return;
             checkingUpdate = true;
-            if (manual) main.SetUpdateStatus("Checking for updates…", false);
+            available = null;
+            main.SetUpdateStatus("Checking for updates…", false, null);
             Thread t = new Thread(() =>
             {
                 Updater.Release r = null;
@@ -165,33 +163,25 @@ namespace MyTaskManager
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
                     checkingUpdate = false;
-                    if (err != null)
-                    {
-                        if (manual) main.SetUpdateStatus("Couldn't check for updates. Check the internet connection and try again.", true);
-                        return;
-                    }
-                    if (!Updater.IsNewer(r)) { main.SetUpdateStatus("You have the latest version.", false); return; }
-                    main.SetUpdateStatus("Version " + r.Version.ToString(3) + " is available.", false);
-                    if (!manual && offeredTag == r.Tag) return;   // asked once already today
-                    offeredTag = r.Tag;
-                    OfferUpdate(r);
+                    if (err != null) { main.SetUpdateStatus("Couldn't check for updates. Check the internet connection and try again.", true, null); return; }
+                    if (!Updater.IsNewer(r)) { main.SetUpdateStatus("You have the latest version.", false, null); return; }
+                    available = r;
+                    string notes = (r.Notes ?? "").Trim();
+                    if (notes.Length > 400) notes = notes.Substring(0, 400) + "…";
+                    main.SetUpdateStatus("Version " + r.Version.ToString(3) + " is available." + (notes.Length > 0 ? "\nWhat's new: " + notes : ""),
+                        false, "Update to " + r.Version.ToString(3));
                 }));
             });
             t.IsBackground = true;
             t.Start();
         }
 
-        void OfferUpdate(Updater.Release r)
+        void InstallUpdate()
         {
-            string notes = (r.Notes ?? "").Trim();
-            if (notes.Length > 600) notes = notes.Substring(0, 600) + "…";
-            Window owner = main.Win.IsVisible ? main.Win : null;
-            if (!Dialog.Confirm(owner, "Update available",
-                "Version " + r.Version.ToString(3) + " is ready (you have " + Updater.CurrentText + ")." +
-                (notes.Length > 0 ? "\n\nWhat's new:\n" + notes : "") +
-                "\n\nYour tasks and settings stay as they are. The app restarts by itself.", "Update now", "Later", Dialog.Kind.Info)) return;
+            Updater.Release r = available;
+            if (r == null || installingUpdate || checkingUpdate) return;
             installingUpdate = true;
-            main.SetUpdateStatus("Downloading version " + r.Version.ToString(3) + "…", false);
+            main.SetUpdateStatus("Downloading version " + r.Version.ToString(3) + "… The app restarts by itself when it's done.", false, null);
             Thread t = new Thread(() =>
             {
                 string err = Updater.Download(r);
@@ -201,7 +191,7 @@ namespace MyTaskManager
                     if (err != null)
                     {
                         installingUpdate = false;
-                        main.SetUpdateStatus(err, true);
+                        main.SetUpdateStatus(err, true, "Try again");
                         Dialog.Info(main.Win.IsVisible ? main.Win : null, "The update didn't finish",
                             err + "\n\nYou can download the new version yourself from:\n" + Updater.ReleasesPage, Dialog.Kind.Warning);
                         return;

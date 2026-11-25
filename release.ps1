@@ -1,9 +1,9 @@
 param(
     [Parameter(Mandatory = $true)][string]$Version,   # e.g. 2.2.0
-    [string]$Notes = ''                                # shown to users in the "Update available" box
+    [string]$Notes = ''                                # shown under Settings > Updates as "What's new"
 )
 # Publishes a new version: sets the version, builds, runs the self-test, commits, tags, pushes,
-# and creates a GitHub Release with MyTaskManager.exe attached. Every installed copy then offers the update.
+# and creates a GitHub Release with MyTaskManager.exe attached (found via Settings > Check for updates).
 #   powershell -ExecutionPolicy Bypass -File release.ps1 -Version 2.2.0 -Notes "Archive button, dark menus"
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
@@ -52,4 +52,4 @@ if (-not $Notes) { $Notes = "My Task Manager $Version" }
 & $gh release create $tag (Join-Path $root 'dist\MyTaskManager.exe') (Join-Path $root 'dist\README.txt') --title "My Task Manager $Version" --notes $Notes
 if ($LASTEXITCODE -ne 0) { throw "Creating the GitHub release failed." }
 Write-Host ""
-Write-Host "Published $tag. Installed copies will offer the update within a day (or via Settings > Check for updates)."
+Write-Host "Published $tag. Installed copies get it from Settings > Check for updates."

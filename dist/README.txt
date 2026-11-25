@@ -44,9 +44,9 @@ THE FULL APP (click the tray icon by the clock, or the open button on the note)
   start with Windows, export/import backup, remove from this PC.
 
 UPDATES
-- The app checks for a new version once a day. When one is out it asks
-  "Update available" - click Update now; it restarts by itself in a few seconds.
-  Your tasks and settings are kept. Check any time: Settings > Check for updates.
+- Settings & backup > Check for updates. If a new version is out, an
+  "Update to ..." button appears: click it and the app restarts by itself in a
+  few seconds. Your tasks and settings are kept. It never updates on its own.
 - Latest version: https://github.com/trmiizi/my-task-manager/releases/latest
 
 GOOD TO KNOW

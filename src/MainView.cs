@@ -38,7 +38,7 @@ namespace MyTaskManager
         public Action<bool> NoteVisibleChanged, NoteTopmostChanged, NoteLockChanged;
         public Action NoteRangeChanged, UninstallRequested, SwitchToNote;
         public Action<string> ThemeChanged;
-        public Action CheckUpdates;
+        public Action CheckUpdates, InstallUpdate;
         CheckBox NoteCheck, NoteTopCheck, NoteLockCheck, NoteWeekCheck;
         ComboBox NagCombo;
         StackPanel ListHost, NavPanel;
@@ -176,8 +176,9 @@ namespace MyTaskManager
                 svc.Save();
             };
             F<Button>("ThemeLight").Click += delegate { PickTheme("light"); };
-            F<TextBlock>("VersionText").Text = "You have version " + Updater.CurrentText + ". New versions are checked once a day and installed with one click.";
+            F<TextBlock>("VersionText").Text = "You have version " + Updater.CurrentText + ". Your tasks and settings are kept when you update.";
             F<Button>("UpdateBtn").Click += delegate { if (CheckUpdates != null) CheckUpdates(); };
+            F<Button>("InstallBtn").Click += delegate { if (InstallUpdate != null) InstallUpdate(); };
             F<Button>("ThemeDark").Click += delegate { PickTheme("dark"); };
             F<Button>("ThemeSystem").Click += delegate { PickTheme("system"); };
             F<Button>("ThemeBtn").Click += delegate { PickTheme(Theme.IsDark ? "light" : "dark"); };
@@ -596,8 +597,11 @@ namespace MyTaskManager
         }
 
         /* Status line under Settings > Updates */
-        public void SetUpdateStatus(string text, bool error)
+        public void SetUpdateStatus(string text, bool error, string installLabel)
         {
+            Button ib = F<Button>("InstallBtn");
+            ib.Visibility = installLabel == null ? Visibility.Collapsed : Visibility.Visible;
+            if (installLabel != null) ib.Content = installLabel;
             TextBlock st = F<TextBlock>("UpdateStatus");
             st.Text = text ?? "";
             st.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
@@ -766,7 +770,10 @@ namespace MyTaskManager
           </Border>
           <Border Style='{StaticResource Card}' Padding='20' Margin='0,0,0,14'>
             <DockPanel>
-              <Button x:Name='UpdateBtn' DockPanel.Dock='Right' VerticalAlignment='Center' Style='{StaticResource Btn}' Content='Check for updates' Height='40'/>
+              <StackPanel DockPanel.Dock='Right' Orientation='Horizontal' VerticalAlignment='Center'>
+                <Button x:Name='InstallBtn' Style='{StaticResource Primary}' Content='Update now' Height='40' Margin='0,0,8,0' Visibility='Collapsed'/>
+                <Button x:Name='UpdateBtn' Style='{StaticResource Btn}' Content='Check for updates' Height='40'/>
+              </StackPanel>
               <StackPanel VerticalAlignment='Center' Margin='0,0,16,0'>
                 <TextBlock Text='Updates' FontSize='16' FontWeight='SemiBold' Margin='0,0,0,4'/>
                 <TextBlock x:Name='VersionText' TextWrapping='Wrap' Foreground='{DynamicResource Text2}'/>

@@ -422,6 +422,10 @@ namespace MyTaskManager
             Theme.Apply(false);
 
             // archive: Today with an "Archive ticked" button, then History > Archived
+            mv.SetView("settings");
+            mv.SetUpdateStatus("Version 2.2.0 is available.\nWhat's new: Bigger text option and a weekly summary.", false, "Update to 2.2.0");
+            Pump(); w.UpdateLayout();
+            Save(w, Path.Combine(dir, "settings-update.png"));
             mv.SetView("today");
             Save(w, Path.Combine(dir, "archive-today.png"));
             mv.SetView("completed");
