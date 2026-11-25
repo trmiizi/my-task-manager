@@ -533,7 +533,7 @@ namespace MyTaskManager
 
             int left = overdue.Count + today.Count(t => !t.Closed);
             NoteTitle.Text = "Today · " + DateTime.Today.ToString("ddd, d MMM", U.En);
-            NoteSub.Text = left == 0 ? "Nothing left. Nice work." : left + " to do" + (overdue.Count > 0 ? " · " + overdue.Count + " overdue" : "");
+            NoteSub.Text = left == 0 ? "Nothing left to do" : left + " to do" + (overdue.Count > 0 ? " · " + overdue.Count + " overdue" : "");
             if (week)
             {
                 int wk = svc.Tasks.Count(t => !t.Closed && string.CompareOrdinal(t.Date, td) >= 0 && string.CompareOrdinal(t.Date, weekEnd) <= 0);

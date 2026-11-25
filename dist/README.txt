@@ -2,12 +2,15 @@ MY TASK MANAGER
 ===============
 
 SETUP (one time, about 1 minute)
-1. Copy MyTaskManager.exe somewhere permanent, e.g. Documents\MyTaskManager\
-   (not inside the ZIP, and not the Downloads folder).
-2. Double-click MyTaskManager.exe.
+1. Download MyTaskManager.exe from
+   https://github.com/trmiizi/my-task-manager/releases/latest
+   If the browser says the file "isn't commonly downloaded": click ... > Keep.
+2. Move it somewhere permanent, e.g. Documents\MyTaskManager\
+   (not the Downloads folder).
+3. Double-click MyTaskManager.exe.
    If Windows shows "Windows protected your PC": click "More info" > "Run anyway".
-   (This appears once because the app isn't from the Microsoft Store.)
-3. Done. A sticky note appears on the desktop, and the app starts by itself
+   (This appears the first time because the app isn't signed by a publisher.)
+4. Done. A sticky note appears on the desktop, and the app starts by itself
    every time Windows starts.
 
 THE STICKY NOTE
@@ -47,6 +50,7 @@ UPDATES
 - Settings & backup > Check for updates. If a new version is out, an
   "Update to ..." button appears: click it and the app restarts by itself in a
   few seconds. Your tasks and settings are kept. It never updates on its own.
+- What's new (in the sidebar) lists what changed in each version.
 - Latest version: https://github.com/trmiizi/my-task-manager/releases/latest
 
 GOOD TO KNOW

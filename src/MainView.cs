@@ -810,7 +810,7 @@ namespace MyTaskManager
               </Border>
               <StackPanel VerticalAlignment='Center' Margin='0,0,16,0'>
                 <TextBlock Text='Appearance' FontSize='16' FontWeight='SemiBold' Margin='0,0,0,4'/>
-                <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Text='Dark mode is easier on the eyes at night. The sticky note switches to its Night colour with it.'/>
+                <TextBlock TextWrapping='Wrap' Foreground='{DynamicResource Text2}' Text='The sticky note switches to its Night colour too.'/>
               </StackPanel>
             </DockPanel>
           </Border>
