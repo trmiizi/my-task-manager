@@ -772,7 +772,7 @@ namespace MyTaskManager
             <DockPanel Margin='0,12,0,0'>
               <Button x:Name='AddBtn' DockPanel.Dock='Right' Style='{StaticResource Primary}' Padding='18,8'>
                 <StackPanel Orientation='Horizontal'>
-                  <TextBlock Text='&#xE710;' FontFamily='{StaticResource IconFont}' FontSize='12' VerticalAlignment='Center' Margin='0,1,8,0'/>
+                  <!-- drawn, not a font glyph: at 12px the glyph's vertical stroke fell between pixels and looked broken --><Path Data='M5,0 L5,10 M0,5 L10,5' Width='10' Height='10' Stroke='{DynamicResource OnAccent}' StrokeThickness='2' StrokeStartLineCap='Square' StrokeEndLineCap='Square' SnapsToDevicePixels='True' UseLayoutRounding='True' VerticalAlignment='Center' Margin='0,0,8,0'/>
                   <TextBlock Text='Add task'/>
                 </StackPanel>
               </Button>
