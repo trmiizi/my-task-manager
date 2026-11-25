@@ -587,7 +587,7 @@ namespace MyTaskManager
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             CheckBox cb = Ui.StatusBox(svc, t, next => Hint("Next one scheduled: " + U.FmtDate(next)));
-            cb.Margin = new Thickness(0, 0, 10, 0);
+            cb.Margin = new Thickness(0, 0, 20, 0);
             g.Children.Add(cb);
 
             TextBlock title = new TextBlock

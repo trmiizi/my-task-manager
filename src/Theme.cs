@@ -114,6 +114,17 @@ namespace MyTaskManager
   </Style>
 
   <!-- Buttons: one template, an overlay darkens on hover/press so it works for every colour -->
+  <!-- Keyboard focus ring: WPF shows it only when moving with Tab/arrows, never after a mouse click. -->
+  <Style x:Key='FocusRing'>
+    <Setter Property='Control.Template'><Setter.Value><ControlTemplate>
+      <Border Margin='-3' CornerRadius='11' BorderThickness='2' BorderBrush='{DynamicResource Accent}' SnapsToDevicePixels='True'/>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
+  <Style x:Key='FocusRingSmall'>
+    <Setter Property='Control.Template'><Setter.Value><ControlTemplate>
+      <Border Margin='-3' CornerRadius='8' BorderThickness='2' BorderBrush='{DynamicResource Accent}' SnapsToDevicePixels='True'/>
+    </ControlTemplate></Setter.Value></Setter>
+  </Style>
   <Style x:Key='Btn' TargetType='Button'>
     <Setter Property='Background' Value='{DynamicResource Surface}'/>
     <Setter Property='Foreground' Value='{DynamicResource Text}'/>
@@ -124,7 +135,7 @@ namespace MyTaskManager
     <Setter Property='Cursor' Value='Hand'/>
     <Setter Property='HorizontalContentAlignment' Value='Center'/>
     <Setter Property='VerticalContentAlignment' Value='Center'/>
-    <Setter Property='FocusVisualStyle' Value='{x:Null}'/>
+    <Setter Property='FocusVisualStyle' Value='{StaticResource FocusRing}'/>
     <Setter Property='Template'>
       <Setter.Value>
         <ControlTemplate TargetType='Button'>
@@ -137,7 +148,6 @@ namespace MyTaskManager
           <ControlTemplate.Triggers>
             <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Ov' Property='Background' Value='{DynamicResource Hover}'/></Trigger>
             <Trigger Property='IsPressed' Value='True'><Setter TargetName='Ov' Property='Background' Value='{DynamicResource Press}'/></Trigger>
-            <Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Bd' Property='BorderBrush' Value='{DynamicResource Accent}'/></Trigger>
             <Trigger Property='IsEnabled' Value='False'><Setter Property='Opacity' Value='0.5'/></Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
@@ -292,7 +302,7 @@ namespace MyTaskManager
     <Setter Property='Height' Value='38'/>
     <Setter Property='Padding' Value='11,0,28,0'/>
     <Setter Property='Cursor' Value='Hand'/>
-    <Setter Property='FocusVisualStyle' Value='{x:Null}'/>
+    <Setter Property='FocusVisualStyle' Value='{StaticResource FocusRing}'/>
     <Setter Property='MaxDropDownHeight' Value='290'/>
     <Setter Property='Template'>
       <Setter.Value>
@@ -333,7 +343,7 @@ namespace MyTaskManager
   <Style x:Key='Check' TargetType='CheckBox'>
     <Setter Property='Cursor' Value='Hand'/>
     <Setter Property='Foreground' Value='{DynamicResource Text}'/>
-    <Setter Property='FocusVisualStyle' Value='{x:Null}'/>
+    <Setter Property='FocusVisualStyle' Value='{StaticResource FocusRingSmall}'/>
     <Setter Property='Template'>
       <Setter.Value>
         <ControlTemplate TargetType='CheckBox'>
@@ -344,11 +354,11 @@ namespace MyTaskManager
                 <Path x:Name='Xk' Data='M4.5,4.5 L11.5,11.5 M11.5,4.5 L4.5,11.5' Stroke='{DynamicResource OnAccent}' StrokeThickness='2.2' StrokeStartLineCap='Round' StrokeEndLineCap='Round' Visibility='Collapsed'/>
               </Grid>
             </Border>
-            <ContentPresenter Margin='10,1,0,0' VerticalAlignment='Top'/>
+            <ContentPresenter x:Name='Cp' Margin='10,1,0,0' VerticalAlignment='Top'/>
           </StackPanel>
           <ControlTemplate.Triggers>
+            <Trigger Property='Content' Value='{x:Null}'><Setter TargetName='Cp' Property='Visibility' Value='Collapsed'/></Trigger>
             <Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Bx' Property='BorderBrush' Value='{DynamicResource Ok}'/></Trigger>
-            <Trigger Property='IsKeyboardFocused' Value='True'><Setter TargetName='Bx' Property='BorderBrush' Value='{DynamicResource Accent}'/></Trigger>
             <Trigger Property='IsChecked' Value='True'>
               <Setter TargetName='Bx' Property='Background' Value='{DynamicResource Ok}'/>
               <Setter TargetName='Bx' Property='BorderBrush' Value='{DynamicResource Ok}'/>
@@ -369,7 +379,7 @@ namespace MyTaskManager
   <Style x:Key='StepCheck' TargetType='CheckBox'>
     <Setter Property='Cursor' Value='Hand'/>
     <Setter Property='Foreground' Value='{DynamicResource Text}'/>
-    <Setter Property='FocusVisualStyle' Value='{x:Null}'/>
+    <Setter Property='FocusVisualStyle' Value='{StaticResource FocusRingSmall}'/>
     <Setter Property='Template'>
       <Setter.Value>
         <ControlTemplate TargetType='CheckBox'>

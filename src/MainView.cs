@@ -538,7 +538,7 @@ namespace MyTaskManager
             g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
             CheckBox cb = Ui.StatusBox(svc, t, next => Flash("Next one scheduled: " + U.FmtDate(next) + ", " + U.FmtTime(t.Time)));
-            cb.Margin = new Thickness(0, 1, 14, 0);
+            cb.Margin = new Thickness(0, 1, 24, 0);   // the box has no label, so the gap to the title lives here
             g.Children.Add(cb);
 
             StackPanel body = new StackPanel();

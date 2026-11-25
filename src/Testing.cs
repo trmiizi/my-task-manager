@@ -347,6 +347,7 @@ namespace MyTaskManager
                     sv.ScrollToTop();
                 }
             }
+            mv.SetView("today"); FocusShot(w, Path.Combine(dir, "focus.png"));
             ReminderCenter rc = new ReminderCenter(svc);
             TaskItem t = svc.Tasks.First(x => x.Title.StartsWith("Pay electricity"));
             Window card = rc.MakeCard(t);
@@ -402,6 +403,7 @@ namespace MyTaskManager
                 mv.SetView(v);
                 Save(w, Path.Combine(dir, "dark-" + v + ".png"));
             }
+            mv.SetView("today"); FocusShot(w, Path.Combine(dir, "dark-focus.png"));
             Window dcard = rc.MakeCard(t);
             dcard.Left = -30000; dcard.Top = 0;
             dcard.Show();
@@ -477,6 +479,70 @@ namespace MyTaskManager
         static void Pump()
         {
             Dispatcher.CurrentDispatcher.Invoke(DispatcherPriority.ApplicationIdle, new Action(delegate { }));
+        }
+
+        /* Draws the keyboard focus ring on a few controls (as if reached with Tab) and captures the whole window incl. the adorner layer. */
+        static void FocusShot(Window w, string path)
+        {
+            List<FrameworkElement> targets = new List<FrameworkElement>();
+            targets.Add((FrameworkElement)w.FindName("AddTime"));
+            targets.Add((FrameworkElement)w.FindName("AddBtn"));
+            FrameworkElement icon = FindFirst(w, x => x is Button && ((Button)x).Style == Theme.S("Icon") && x.IsVisible);
+            FrameworkElement box = FindFirst(w, x => x is CheckBox && x.IsVisible);
+            if (icon != null) targets.Add(icon);
+            if (box != null) targets.Add(box);
+            List<KeyValuePair<System.Windows.Documents.AdornerLayer, RingAdorner>> added = new List<KeyValuePair<System.Windows.Documents.AdornerLayer, RingAdorner>>();
+            foreach (FrameworkElement t in targets)
+            {
+                if (t == null) continue;
+                System.Windows.Documents.AdornerLayer layer = System.Windows.Documents.AdornerLayer.GetAdornerLayer(t);
+                if (layer == null) continue;
+                RingAdorner a = new RingAdorner(t, t.FocusVisualStyle);
+                layer.Add(a);
+                added.Add(new KeyValuePair<System.Windows.Documents.AdornerLayer, RingAdorner>(layer, a));
+            }
+            Pump(); w.UpdateLayout(); Pump();
+            FrameworkElement root = (FrameworkElement)VisualTreeHelper.GetChild(w, 0);
+            Size size = new Size(Math.Ceiling(root.ActualWidth), Math.Ceiling(root.ActualHeight));
+            RenderTargetBitmap rtb = new RenderTargetBitmap((int)size.Width, (int)size.Height, 96, 96, PixelFormats.Pbgra32);
+            DrawingVisual dv = new DrawingVisual();
+            using (DrawingContext dc = dv.RenderOpen())
+            {
+                dc.DrawRectangle(Theme.B("Bg"), null, new Rect(size));
+                dc.DrawRectangle(new VisualBrush(root), null, new Rect(size));
+            }
+            rtb.Render(dv);
+            PngBitmapEncoder enc = new PngBitmapEncoder();
+            enc.Frames.Add(BitmapFrame.Create(rtb));
+            using (FileStream fs = File.Create(path)) enc.Save(fs);
+            foreach (KeyValuePair<System.Windows.Documents.AdornerLayer, RingAdorner> kv in added) kv.Key.Remove(kv.Value);
+        }
+
+        static FrameworkElement FindFirst(DependencyObject d, Func<FrameworkElement, bool> pick)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                DependencyObject c = VisualTreeHelper.GetChild(d, i);
+                FrameworkElement fe = c as FrameworkElement;
+                if (fe != null && pick(fe)) return fe;
+                FrameworkElement r = FindFirst(c, pick);
+                if (r != null) return r;
+            }
+            return null;
+        }
+
+        class RingAdorner : System.Windows.Documents.Adorner
+        {
+            readonly Control ring;
+            public RingAdorner(UIElement el, Style style) : base(el)
+            {
+                ring = new Control { Style = style, IsHitTestVisible = false };
+                AddVisualChild(ring);
+            }
+            protected override int VisualChildrenCount { get { return 1; } }
+            protected override Visual GetVisualChild(int index) { return ring; }
+            protected override Size MeasureOverride(Size constraint) { ring.Measure(AdornedElement.RenderSize); return AdornedElement.RenderSize; }
+            protected override Size ArrangeOverride(Size finalSize) { ring.Arrange(new Rect(finalSize)); return finalSize; }
         }
 
         static void Save(Window w, string path)
