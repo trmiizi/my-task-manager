@@ -44,7 +44,7 @@ namespace MyTaskManager
 
         public void ShowTest()
         {
-            Window w = Build("TEST", "Reminders are working", "This is how your reminders will look.", "", false);
+            Window w = Build(null, null, "Reminders are working", "They'll look like this.", "", false);
             Button ok = (Button)w.FindName("DoneBtn");
             ok.Content = "Got it";
             ((Button)w.FindName("NotDoneBtn")).Visibility = Visibility.Collapsed;
@@ -67,11 +67,13 @@ namespace MyTaskManager
         {
             DateTime now = DateTime.Now;
             bool late = t.Due < now.AddMinutes(-1);
-            string kicker = late ? (t.Due < now.AddHours(-1) ? "MISSED REMINDER" : "OVERDUE") : "REMINDER";
+            // big time on the left ("3:00" over "PM"), day + relative time under the title
+            string time = U.FmtTime(t.Time);
+            int sp = time.LastIndexOf(' ');
+            string hm = sp > 0 ? time.Substring(0, sp) : time, ap = sp > 0 ? time.Substring(sp + 1) : "";
             string fd = U.FmtDate(t.Date);
-            if (fd == "Today" || fd == "Tomorrow" || fd == "Yesterday") fd = fd.ToLowerInvariant();
-            string dueLine = "Due " + fd + " at " + U.FmtTime(t.Time) + "  ·  " + U.Rel(t.Due);
-            Window w = Build(kicker, t.Title, dueLine, t.Notes, late);
+            string rel = fd == "Today" ? U.Rel(t.Due) : fd + " · " + U.Rel(t.Due);
+            Window w = Build(hm, ap, t.Title, rel, t.Notes, late);
 
             ((Button)w.FindName("DoneBtn")).Click += delegate
             {
@@ -114,7 +116,7 @@ namespace MyTaskManager
         {
             string lines = string.Join("\n", rest.Take(5).Select(t => "•  " + t.Title + "  (" + U.FmtDate(t.Date) + ", " + U.FmtTime(t.Time) + ")"));
             if (rest.Count > 5) lines += "\n…and " + (rest.Count - 5) + " more";
-            Window w = summary = Build("MORE REMINDERS", rest.Count + " more task" + (rest.Count == 1 ? " needs" : "s need") + " attention", "", lines, true);
+            Window w = summary = Build(null, null, rest.Count + " more task" + (rest.Count == 1 ? " is" : "s are") + " due", "", lines, true);
             w.Closed += delegate { if (summary == w) summary = null; };
             Button open = (Button)w.FindName("DoneBtn");
             open.Content = "Open My Task Manager";
@@ -125,16 +127,26 @@ namespace MyTaskManager
             Present(w);
         }
 
-        Window Build(string kicker, string title, string due, string notes, bool late)
+        /* hm/ap = the due time for the left column ("3:00", "PM"); null shows a bell instead (test card, summary) */
+        Window Build(string hm, string ap, string title, string rel, string notes, bool late)
         {
             Window w = (Window)XamlReader.Parse(Xaml);
-            ((TextBlock)w.FindName("Kicker")).Text = kicker;
-            ((TextBlock)w.FindName("Kicker")).Foreground = late ? Theme.B("Danger") : Theme.B("Warn");
-            ((Border)w.FindName("Bar")).Background = late ? Theme.B("Danger") : Theme.B("Warn");
+            TextBlock hmText = (TextBlock)w.FindName("HmText"), apText = (TextBlock)w.FindName("ApText");
+            if (hm == null)
+            {
+                hmText.Visibility = Visibility.Collapsed; apText.Visibility = Visibility.Collapsed;
+                ((TextBlock)w.FindName("BellIcon")).Visibility = Visibility.Visible;
+            }
+            else
+            {
+                hmText.Text = hm; apText.Text = ap;
+                if (late) { hmText.SetResourceReference(TextBlock.ForegroundProperty, "Danger"); apText.SetResourceReference(TextBlock.ForegroundProperty, "Danger"); }
+            }
             ((TextBlock)w.FindName("TitleText")).Text = title;
             TextBlock dueText = (TextBlock)w.FindName("DueText");
-            dueText.Text = due;
-            if (string.IsNullOrEmpty(due)) dueText.Visibility = Visibility.Collapsed;
+            dueText.Text = rel;
+            if (late) dueText.SetResourceReference(TextBlock.ForegroundProperty, "Danger");
+            if (string.IsNullOrEmpty(rel)) dueText.Visibility = Visibility.Collapsed;
             TextBlock notesText = (TextBlock)w.FindName("NotesText");
             notesText.Text = notes ?? "";
             if (string.IsNullOrEmpty(notes)) notesText.Visibility = Visibility.Collapsed;
@@ -178,32 +190,38 @@ namespace MyTaskManager
         const string Xaml = @"
 <Window xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
         WindowStyle='None' AllowsTransparency='True' Background='Transparent' Topmost='True' ShowInTaskbar='False'
-        ShowActivated='False' ResizeMode='NoResize' SizeToContent='Height' Width='440' FontFamily='Segoe UI' FontSize='13.5'
+        ShowActivated='False' ResizeMode='NoResize' SizeToContent='Height' Width='500' FontFamily='Segoe UI' FontSize='13.5'
         Foreground='{DynamicResource Text}' UseLayoutRounding='True' TextOptions.TextFormattingMode='Display' Title='Reminder'>
-  <Border Margin='12' Background='{DynamicResource Surface}' CornerRadius='12' BorderBrush='{DynamicResource Line}' BorderThickness='1'>
-    <Border.Effect><DropShadowEffect BlurRadius='22' ShadowDepth='4' Direction='270' Opacity='0.20'/></Border.Effect>
+  <Window.Resources>
+    <Style x:Key='Ink' TargetType='Button' BasedOn='{StaticResource Btn}'>
+      <Setter Property='Background' Value='{DynamicResource Text}'/>
+      <Setter Property='BorderBrush' Value='{DynamicResource Text}'/>
+      <Setter Property='Foreground' Value='{DynamicResource Surface}'/>
+    </Style>
+  </Window.Resources>
+  <Border Margin='12' Background='{DynamicResource Surface}' CornerRadius='10' BorderBrush='{DynamicResource Line}' BorderThickness='1'>
+    <Border.Effect><DropShadowEffect BlurRadius='24' ShadowDepth='6' Direction='270' Opacity='0.22'/></Border.Effect>
     <Grid>
-      <Border x:Name='Bar' Width='4' HorizontalAlignment='Left' CornerRadius='12,0,0,12'/>
-      <StackPanel Margin='20,12,12,16'>
+      <Grid.ColumnDefinitions><ColumnDefinition Width='92'/><ColumnDefinition/></Grid.ColumnDefinitions>
+      <Border Background='{DynamicResource Surface2}' CornerRadius='9,0,0,9'>
+        <StackPanel VerticalAlignment='Center' HorizontalAlignment='Center'>
+          <TextBlock x:Name='HmText' FontSize='28' FontWeight='SemiBold' HorizontalAlignment='Center' Typography.NumeralAlignment='Tabular'/>
+          <TextBlock x:Name='ApText' FontSize='12' FontWeight='SemiBold' Foreground='{DynamicResource Text2}' HorizontalAlignment='Center' Margin='0,1,0,0'/>
+          <TextBlock x:Name='BellIcon' Text='&#xEA8F;' FontFamily='{StaticResource IconFont}' FontSize='22' Foreground='{DynamicResource Text2}' HorizontalAlignment='Center' Visibility='Collapsed'/>
+        </StackPanel>
+      </Border>
+      <StackPanel Grid.Column='1' Margin='16,10,8,14'>
         <DockPanel>
-          <Button x:Name='CloseBtn' DockPanel.Dock='Right' Style='{StaticResource Icon}' Content='&#xE711;' FontSize='11' Width='28' Height='28' ToolTip='Dismiss'/>
-          <StackPanel Orientation='Horizontal' VerticalAlignment='Center'>
-            <TextBlock Text='&#xEA8F;' FontFamily='{StaticResource IconFont}' FontSize='12' Foreground='{Binding Foreground, ElementName=Kicker}' VerticalAlignment='Center' Margin='0,1,6,0'/>
-            <TextBlock x:Name='Kicker' FontSize='11.5' FontWeight='Bold' VerticalAlignment='Center'/>
-          </StackPanel>
+          <Button x:Name='CloseBtn' DockPanel.Dock='Right' VerticalAlignment='Top' Style='{StaticResource Icon}' Content='&#xE711;' FontSize='10' Width='28' Height='28' Foreground='{DynamicResource Text3}' ToolTip='Dismiss'/>
+          <TextBlock x:Name='TitleText' FontSize='16' FontWeight='SemiBold' TextWrapping='Wrap' Margin='0,4,6,0' Cursor='Hand' ToolTip='Open My Task Manager'/>
         </DockPanel>
-        <TextBlock x:Name='TitleText' FontSize='16.5' FontWeight='SemiBold' TextWrapping='Wrap' Margin='0,2,8,2' Cursor='Hand' ToolTip='Open My Task Manager'/>
-        <TextBlock x:Name='DueText' Foreground='{DynamicResource Text2}' TextWrapping='Wrap'/>
-        <TextBlock x:Name='NotesText' Foreground='{DynamicResource Text2}' TextWrapping='Wrap' Margin='0,6,8,0'/>
-        <WrapPanel Margin='0,14,0,0'>
-          <Button x:Name='DoneBtn' Style='{StaticResource Primary}' Margin='0,0,6,0' Padding='12,7'>
-            <StackPanel Orientation='Horizontal'><TextBlock Text='&#xE73E;' FontFamily='{StaticResource IconFont}' FontSize='11' VerticalAlignment='Center' Margin='0,1,6,0'/><TextBlock x:Name='DoneText' Text='Done'/></StackPanel>
-          </Button>
-          <Button x:Name='NotDoneBtn' Style='{StaticResource Btn}' Margin='0,0,6,0' Padding='12,7' Foreground='{DynamicResource Danger}'>
-            <StackPanel Orientation='Horizontal'><TextBlock Text='&#xE711;' FontFamily='{StaticResource IconFont}' FontSize='10' VerticalAlignment='Center' Margin='0,1,6,0'/><TextBlock Text='Not done'/></StackPanel>
-          </Button>
-          <Button x:Name='Snooze1' Style='{StaticResource Btn}' Content='Snooze 10 min' Margin='0,0,6,0' Padding='12,7'/>
-          <Button x:Name='Snooze2' Style='{StaticResource Btn}' Content='1 hour' Padding='12,7'/>
+        <TextBlock x:Name='DueText' Foreground='{DynamicResource Text2}' TextWrapping='Wrap' Margin='0,1,8,0'/>
+        <TextBlock x:Name='NotesText' Foreground='{DynamicResource Text2}' TextWrapping='Wrap' Margin='0,2,8,0'/>
+        <WrapPanel Margin='0,12,0,0'>
+          <Button x:Name='DoneBtn' Style='{StaticResource Ink}' Margin='0,0,6,0' Padding='11,6' Content='Done'/>
+          <Button x:Name='NotDoneBtn' Style='{StaticResource Btn}' Margin='0,0,6,0' Padding='11,6' Content='Not done'/>
+          <Button x:Name='Snooze1' Style='{StaticResource Btn}' Content='Snooze 10 min' Margin='0,0,6,0' Padding='11,6'/>
+          <Button x:Name='Snooze2' Style='{StaticResource Btn}' Content='1 hour' Padding='11,6'/>
         </WrapPanel>
         <TextBlock x:Name='NagText' FontSize='11.5' Foreground='{DynamicResource Text3}' Margin='0,8,0,0' Visibility='Collapsed'/>
       </StackPanel>
