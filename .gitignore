@@ -1,0 +1,6 @@
+# build output (published as GitHub Release assets instead)
+dist/*.exe
+# screenshots from --screenshot / --notetest
+shots/
+*.update.exe
+*.old.exe
