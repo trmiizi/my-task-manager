@@ -9,7 +9,7 @@ $wpf  = "$fw\WPF"
 $out  = if ($OutDir) { $OutDir } else { Join-Path $root 'dist' }
 New-Item -ItemType Directory -Force $out | Out-Null
 
-# ---- icon: blue rounded square with a white tick, PNG frames packed into an .ico
+# ---- icon: yellow sticky note with a tick, PNG frames packed into an .ico (delete src\app.ico to redraw)
 $ico = Join-Path $root 'src\app.ico'
 if (-not (Test-Path $ico)) {
     Add-Type -AssemblyName System.Drawing
@@ -19,17 +19,29 @@ if (-not (Test-Path $ico)) {
         $g = [System.Drawing.Graphics]::FromImage($bmp)
         $g.SmoothingMode = 'AntiAlias'
         $g.Clear([System.Drawing.Color]::Transparent)
-        $r = [Math]::Max(3, [int]($s * 0.24)); $d = $r * 2; $w = $s - 1
-        $path = New-Object System.Drawing.Drawing2D.GraphicsPath
-        $path.AddArc(0, 0, $d, $d, 180, 90); $path.AddArc($w - $d, 0, $d, $d, 270, 90)
-        $path.AddArc($w - $d, $w - $d, $d, $d, 0, 90); $path.AddArc(0, $w - $d, $d, $d, 90, 90); $path.CloseFigure()
-        $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 59, 91, 219))), $path)
-        $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::White), ([Math]::Max(1.6, $s * 0.1))
+        # sticky note: yellow note, folded bottom-right corner, tape on top, dark tick (drawn on a 64-unit grid)
+        $k = $s / 64.0
+        $g.ScaleTransform($k, $k)
+        $note = New-Object System.Drawing.Drawing2D.GraphicsPath
+        $note.AddArc(7, 7, 8, 8, 180, 90); $note.AddLine(11, 7, 53, 7); $note.AddArc(49, 7, 8, 8, 270, 90)
+        $note.AddLine(57, 11, 57, 43); $note.AddLine(57, 43, 43, 57); $note.AddLine(43, 57, 11, 57)
+        $note.AddArc(7, 49, 8, 8, 90, 90); $note.CloseFigure()
+        $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 255, 212, 59))), $note)
+        $fold = New-Object System.Drawing.Drawing2D.GraphicsPath
+        $fold.AddLine(57, 43, 47, 43); $fold.AddArc(43, 43, 8, 8, 270, -90); $fold.AddLine(43, 47, 43, 57); $fold.CloseFigure()
+        $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(255, 232, 168, 0))), $fold)
+        if ($s -ge 24) {
+            $st = $g.Save()
+            $g.TranslateTransform(32, 7.5); $g.RotateTransform(-4)
+            $g.FillRectangle((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(200, 255, 255, 255))), -10, -4.5, 20, 9)
+            $g.Restore($st)
+        }
+        $pen = New-Object System.Drawing.Pen ([System.Drawing.Color]::FromArgb(255, 92, 61, 0)), ([Math]::Max(6.0, 1.7 / $k))
         $pen.StartCap = 'Round'; $pen.EndCap = 'Round'; $pen.LineJoin = 'Round'
         $pts = [System.Drawing.PointF[]]@(
-            (New-Object System.Drawing.PointF ($s * 0.27), ($s * 0.52)),
-            (New-Object System.Drawing.PointF ($s * 0.43), ($s * 0.68)),
-            (New-Object System.Drawing.PointF ($s * 0.74), ($s * 0.34)))
+            (New-Object System.Drawing.PointF 19, 32),
+            (New-Object System.Drawing.PointF 28, 41),
+            (New-Object System.Drawing.PointF 45, 23))
         $g.DrawLines($pen, $pts)
         $g.Dispose()
         $ms = New-Object System.IO.MemoryStream
