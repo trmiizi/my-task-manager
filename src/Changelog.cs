@@ -13,6 +13,8 @@ namespace MyTaskManager
 
         public static readonly Entry[] All =
         {
+            new Entry("2.1.3", "2026-11-25",
+                "Settings are shorter and easier to scan."),
             new Entry("2.1.2", "2026-11-25",
                 "New app icon: a yellow sticky note with a tick.",
                 "This What's new page, so you can see what changed after each update."),
