@@ -308,7 +308,7 @@ namespace MyTaskManager
 
         void ExitApp()
         {
-            if (!Dialog.Confirm(null, "Exit My Task Manager?", "Reminders will stop until you open it again (or restart the PC).", "Exit", "Cancel", Dialog.Kind.Question)) return;
+            if (!Dialog.Confirm(null, "Exit My Task Manager?", "Reminders stop until you open it again.", "Exit", "Keep running", Dialog.Kind.Question)) return;
             tray.Visible = false;
             tray.Dispose();
             Shutdown();
